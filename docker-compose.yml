@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: mon_postgres_local
+    restart: always
+    environment:
+      POSTGRES_USER: mon_utilisateur
+      POSTGRES_PASSWORD: mon_mot_de_passe_secret
+      POSTGRES_DB: ma_base_de_donnees
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

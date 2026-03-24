@@ -2,42 +2,27 @@
 
 import React from 'react';
 
-export default function AdminLoginForm() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
-      {/* L'encadré principal */}
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-lg">
-        
-        {/* Titre de la section */}
-        <h1 className="mb-6 text-center text-2xl font-bold tracking-tight text-gray-900">
-          Connexion Admin
-        </h1>
+export default function Producteurs() {
+    return (
+        <div className="flex flex-col min-h-screen bg-zinc-300 text-zinc-950 items-center p-12 text-center">
 
-        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-          <div>
-            <label 
-              htmlFor="password" 
-              className="block text-sm font-medium text-gray-700 mb-2 text-left"
-            >
-              Mot de passe
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
-              placeholder="••••••••"
-            />
-          </div>
+            {/* Formulaire centré */}
+            <form onSubmit={(e) => e.preventDefault()} className="flex flex-col items-center gap-4">
+                <p className="font-bold">Connexion Admin</p>
+                
+                {/* Mot de passe dans un encadré simple */}
+                <input
+                    type="password"
+                    placeholder="Mot de passe"
+                    className="border border-zinc-950 bg-transparent px-2 py-1 outline-none text-center"
+                />
+                
+                {/* Bouton tout simple */}
+                <button type="submit" className="border border-zinc-950 px-4 py-1 hover:bg-zinc-400 transition-colors">
+                    Connexion
+                </button>
+            </form>
 
-          <button
-            type="submit"
-            className="w-full rounded-md bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 active:scale-[0.98] transition-all"
-          >
-            Se connecter
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+        </div>
+    );
 }

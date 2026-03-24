@@ -78,9 +78,8 @@ export default function Home() {
           <p className="text-xl leading-relaxed">
             Bienvenue sur le bar à papa ! 
             Vous êtes invités à découvrir de nombreux spiritueux venant des
-            quatre coins du monde, à passer votre commande ou à souscrire à 
-            l'abonnement du bar à papa pour découvrir chaque mois un 
-            nouveau spiritueux, et de profiter de votre dégustation !
+            quatre coins du monde, à passer votre commande ou à souscrire à l&apos;abonnement
+            du bar à papa pour découvrir chaque mois un nouveau spiritueux, et de profiter de votre dégustation !
           </p>
         </section>
 

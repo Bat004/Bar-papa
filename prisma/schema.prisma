@@ -6,17 +6,34 @@ datasource db {
   provider = "postgresql"
 }
 
-// Parcours admin : Login & DashBoard
 model Admin {
   id       Int    @id @default(autoincrement())
   username String @unique
   password String
 }
 
-// Parcours utilisateur : Navigation par zone
+model Zone {
+  id          Int          @id @default(autoincrement())
+  nom         String
+  producteurs Producteur[]
+}
+
+model Producteur {
+  id          Int       @id @default(autoincrement())
+  nom         String
+  description String?
+  zoneId      Int
+  zone        Zone      @relation(fields: [zoneId], references: [id])
+  produits    Produit[]
+}
+
+
 model Produit {
-  id         Int    @id @default(autoincrement())
-  nom        String
-  producteur String
-  zone       String
+  id           Int        @id @default(autoincrement())
+  nom          String
+  description  String?
+  type         String
+  lienBoutique String?
+  producteurId Int
+  producteur   Producteur @relation(fields: [producteurId], references: [id])
 }

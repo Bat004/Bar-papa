@@ -11,11 +11,21 @@ export default function Home() {
   // 2. selectedContinent : le texte pour quel bouton a été cliqué
   const [selectedContinent, setSelectedContinent] = useState("");
 
+
   //fonction au clic sur un continent
   const handleContinentClick = (continent: string) => {
     setSelectedContinent(continent);
     setIsModalOpen(true);
   };
+
+  const setProducersLink = (continent: string) =>{
+    return `/zones/${continent}/producteurs`
+  };
+
+  const setProductsLink = (continent: string) => {
+    return `/zones/${continent}/produits`
+  }
+
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-300 text-zinc-950 font-sans">
@@ -34,13 +44,20 @@ export default function Home() {
 
         <section className="w-full">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-            {["Europe", "Asie", "Afrique", "Amérique du Nord", "Amérique du Sud", "Océanie"].map((continent) => (
+            {[
+              {buttonName: "Europe", linkName: "europe"},
+              {buttonName: "Asie", linkName: "asie"},
+              {buttonName: "Afrique", linkName: "afrique"},
+              {buttonName: "Amérique du Nord", linkName: "amerique-du-nord"},
+              {buttonName: "Amérique du Sud", linkName: "amerique-du-sud"},
+              {buttonName: "Océanie", linkName: "oceanie"}
+            ].map((continent) => (
               <button
-                key={continent}
-                onClick={() => handleContinentClick(continent)} //déclencheur
+                key={continent.linkName}
+                onClick={() => handleContinentClick(continent.linkName)} //déclencheur
                 className="h-16 rounded-lg border border-zinc-800 bg-zinc-50 text-zinc-950 font-medium transition-all hover:bg-zinc-200"
               >
-                {continent}
+                {continent.buttonName}
               </button>
             ))}
           </div>
@@ -59,14 +76,14 @@ export default function Home() {
           
           {/* Le composant <Link> de Next.js est comme un <a> en HTML, mais ultra-rapide */}
           <Link
-            href={`/producteurs?zone=${selectedContinent}`} //transmettre la zone dans l'URL
+            href={ setProducersLink(selectedContinent) } //transmettre la zone dans l'URL
             className="w-full text-center py-3 rounded-md bg-zinc-900 text-zinc-50 font-medium hover:bg-zinc-800 transition-colors"
           >
             Voir les producteurs
           </Link>
 
           <Link
-            href={`/produits?zone=${selectedContinent}`}
+            href={setProductsLink(selectedContinent)}
             className="w-full text-center py-3 rounded-md border border-zinc-900 text-zinc-900 font-medium hover:bg-zinc-100 transition-colors"
           >
             Voir tous les spiritueux
@@ -77,3 +94,4 @@ export default function Home() {
     </div>
   );
 }
+

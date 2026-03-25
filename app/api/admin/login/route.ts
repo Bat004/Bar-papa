@@ -1,19 +1,25 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
     try {
-        // 1. Récupérer les données envoyées par ton formulaire
+        // On vérifie juste si la requête arrive
         const body = await request.json();
-        const { username, password } = body;
+        console.log("Corps reçu :", body);
 
-        // 2. Faire ta logique de vérification ici (ex: vérifier dans la BDD)
-        if (username === "admin" && password === "1234") {
-            return NextResponse.json({ message: "Connexion réussie" }, { status: 200 });
-        } else {
-            return NextResponse.json({ error: "Identifiants incorrects" }, { status: 401 });
-        }
+        // On crée le cookie (LE AWAIT EST OBLIGATOIRE SUR NEXT 15)
+        const cookieStore = await cookies();
 
-    } catch (error) {
-        return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+        cookieStore.set('session_token', 'badge_admin_test', {
+            httpOnly: true,
+            secure: false, // On met false pour le localhost
+            path: '/',
+        });
+
+        return NextResponse.json({ status: "success" }, { status: 200 });
+    } catch (error: any) {
+        // C'est ICI qu'on va voir le vrai problème dans ton terminal
+        console.error("ERREUR SERVEUR :", error.message);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

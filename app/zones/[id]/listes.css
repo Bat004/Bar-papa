@@ -1,0 +1,84 @@
+/* Partagé entre Produits et Producteurs */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #d4d4d8;
+    color: #09090b;
+    font-family: sans-serif;
+}
+
+.header {
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px 24px;
+}
+
+.search-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #71717a;
+}
+
+.search-input {
+    width: 100%;
+    padding: 8px 16px;
+    background-color: #f4f4f5;
+    border: 1px solid #a1a1aa;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #09090b;
+}
+
+.search-input::placeholder {
+    color: #71717a;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #52525b;
+}
+
+.filter-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: #f4f4f5;
+    border: 1px solid #a1a1aa;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #3f3f46;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.filter-button:hover {
+    background-color: #e4e4e7;
+}
+
+.item-card {
+    border: 1px solid black;
+    margin: 8px;
+    padding: 8px;
+}

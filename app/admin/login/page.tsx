@@ -13,15 +13,22 @@ export default function AdminLogin() {
         e.preventDefault();
         setError(false);
 
-        const res = await fetch('/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
-        });
+        // NOUVEAU CODE
+        try {
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            });
 
-        if (res.ok) {
-            router.push('/admin/dashboard');
-        } else {
+            if (res.ok) {
+                router.push('/admin/dashboard');
+                router.refresh();
+            } else {
+                setError(true);
+            }
+        } catch (error) {
+            console.error("Erreur de connexion:", error);
             setError(true);
         }
     };

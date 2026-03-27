@@ -64,17 +64,13 @@ export default function Home() {
         </section>
       </main>
 
-      {/* --- LE COMPOSANT MODALE --- */}
-      {/* On passe les infos en "props"*/}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={`Explorer : ${selectedContinent}`}
       >
-        {/* Les enfants children pour nos choix de navigation */}
         <div className="flex flex-col gap-4 mt-4">
           
-          {/* Le composant <Link> de Next.js est comme un <a> en HTML, mais ultra-rapide */}
           <Link
             href={ setProducersLink(selectedContinent) } //transmettre la zone dans l'URL
             className="w-full text-center py-3 rounded-md bg-zinc-900 text-zinc-50 font-medium hover:bg-zinc-800 transition-colors"

@@ -12,17 +12,25 @@ model Admin {
   password String
 }
 
-model Zone {
+model Continent {
   id          Int          @id @default(autoincrement())
   nom         String
-  souszones  SousZone[]
+  pays        Pays[]
 }
 
-model SousZone {
+model Pays {
   id          Int          @id @default(autoincrement())
   nom         String
-  zoneId      Int
-  zone        Zone         @relation(fields: [zoneId], references: [id])
+  continentId Int
+  continent   Continent    @relation(fields: [continentId], references: [id])
+  regions     Region[]
+}
+
+model Region {
+  id          Int          @id @default(autoincrement())
+  nom         String
+  paysId      Int
+  pays        Pays         @relation(fields: [paysId], references: [id])
   producteurs Producteur[]
 }
 
@@ -30,8 +38,8 @@ model Producteur {
   id          Int       @id @default(autoincrement())
   nom         String
   description String?
-  sousZoneId      Int
-  souszone        SousZone      @relation(fields: [sousZoneId], references: [id])
+  regionId    Int
+  region      Region      @relation(fields: [regionId], references: [id])
   produits    Produit[]
 }
 

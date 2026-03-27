@@ -21,10 +21,8 @@ export default function Modal({isOpen, onClose, title, children} : ModalProps) {
                 ✕
                 </button>
 
-                {/* Le Titre */}
                 <h2 className="text-2xl font-bold mb-6 text-gray-800">{title}</h2>
 
-                {/* Le contenu dynamique */}
                 <div className="space-y-4">
                     {children}
                 </div>

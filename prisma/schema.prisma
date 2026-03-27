@@ -15,6 +15,14 @@ model Admin {
 model Zone {
   id          Int          @id @default(autoincrement())
   nom         String
+  souszones  SousZone[]
+}
+
+model SousZone {
+  id          Int          @id @default(autoincrement())
+  nom         String
+  zoneId      Int
+  zone        Zone         @relation(fields: [zoneId], references: [id])
   producteurs Producteur[]
 }
 
@@ -22,8 +30,8 @@ model Producteur {
   id          Int       @id @default(autoincrement())
   nom         String
   description String?
-  zoneId      Int
-  zone        Zone      @relation(fields: [zoneId], references: [id])
+  sousZoneId      Int
+  souszone        SousZone      @relation(fields: [sousZoneId], references: [id])
   produits    Produit[]
 }
 

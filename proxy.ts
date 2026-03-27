@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const session = request.cookies.get('session_token');
     const { pathname } = request.nextUrl;
 
@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
 }
 
-// On limite le middleware uniquement aux routes d'administration
+// On limite le proxy uniquement aux routes d'administration
 export const config = {
     matcher: '/admin/:path*',
 };

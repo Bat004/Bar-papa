@@ -1,15 +1,33 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
+
 
 export default function AdminDashboard() {
+
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/api/admin/logout', { method: 'POST' });
+            router.push('/admin/login');
+            router.refresh();
+        } catch (error) {
+            console.error("Erreur lors de la déconnexion :", error);
+        }
+    };
+
     return (
         <div className="flex flex-col min-h-screen bg-zinc-300 text-zinc-950 font-sans p-8">
             <header className="flex justify-between items-center border-b border-zinc-950 pb-4 mb-12">
                 <h1 className="text-2xl font-bold uppercase tracking-tighter">
                     Dashboard Admin
                 </h1>
-                <button className="text-xs border border-zinc-950 px-2 py-1 hover:bg-zinc-400">
+                <button 
+                    className="text-xs border border-zinc-950 px-2 py-1 hover:bg-zinc-400"
+                    onClick={handleLogout}
+                >
                     Déconnexion
                 </button>
             </header>

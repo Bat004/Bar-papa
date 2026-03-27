@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 import { SignJWT } from 'jose'; 
 
-const prisma = new PrismaClient();
 const SECRET_KEY = new TextEncoder().encode('mon_super_secret_temporaire_pour_le_bar_a_papa');
 
 export async function POST(request: Request) {

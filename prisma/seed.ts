@@ -2,7 +2,6 @@ import { prisma } from '@/lib/prisma';
 
 async function main() {
     console.log('🧹 Nettoyage de la base de données...');
-    // On supprime dans l'ordre inverse des relations pour éviter les erreurs de clés étrangères
     await prisma.produit.deleteMany();
     await prisma.producteur.deleteMany();
     await prisma.region.deleteMany();
@@ -18,7 +17,7 @@ async function main() {
         },
     });
 
-    console.log('🌍 Création des données géographiques et des catalogues...');
+    console.log('🌍 Création des données géographiques et des catalogues (avec pièges)...');
 
     // --- EUROPE ---
     await prisma.continent.create({
@@ -36,30 +35,29 @@ async function main() {
                                         create: [
                                             {
                                                 nom: 'Domaine de la Romanée-Conti',
-                                                description: 'Un des domaines viticoles les plus prestigieux au monde, produisant exclusivement des Grands Crus.',
+                                                description: 'Domaine mythique, exclusivement des Grands Crus.',
                                                 produits: {
                                                     create: [
-                                                        { nom: 'La Tâche Grand Cru', type: 'Vin Rouge', description: 'Un pinot noir d\'une complexité absolue.', lienBoutique: 'https://boutique-exemple.com/la-tache' },
-                                                        { nom: 'Montrachet Grand Cru', type: 'Vin Blanc', description: 'Le chardonnay dans son expression la plus pure.' }
+                                                        { nom: 'La Tâche Grand Cru', type: 'Vin Rouge', lienBoutique: 'https://boutique.com/la-tache' }
                                                     ]
                                                 }
                                             }
                                         ]
                                     }
                                 },
+                                { nom: 'Bordeaux' } // PIÈGE : Région sans producteurs
+                            ]
+                        }
+                    },
+                    {
+                        nom: 'Italie',
+                        regions: {
+                            create: [
                                 {
-                                    nom: 'Bordeaux',
+                                    nom: 'Toscane',
                                     producteurs: {
                                         create: [
-                                            {
-                                                nom: 'Château Margaux',
-                                                description: 'Premier Grand Cru Classé en 1855, légende de l\'appellation Margaux.',
-                                                produits: {
-                                                    create: [
-                                                        { nom: 'Château Margaux 2015', type: 'Vin Rouge', description: 'Millésime exceptionnel, puissant et élégant.', lienBoutique: 'https://boutique-exemple.com/margaux-2015' }
-                                                    ]
-                                                }
-                                            }
+                                            { nom: 'Marchesi Antinori', description: 'Créateurs du Tignanello.', produits: { create: [{ nom: 'Tignanello', type: 'Vin Rouge' }] } }
                                         ]
                                     }
                                 }
@@ -67,34 +65,29 @@ async function main() {
                         }
                     },
                     {
-                        nom: 'Écosse',
+                        nom: 'Écosse (Royaume-Uni)',
                         regions: {
                             create: [
                                 {
                                     nom: 'Islay',
                                     producteurs: {
                                         create: [
-                                            {
-                                                nom: 'Lagavulin',
-                                                description: 'Distillerie mythique reconnue pour ses whiskies intensément tourbés et fumés.',
-                                                produits: {
-                                                    create: [
-                                                        { nom: 'Lagavulin 16 ans', type: 'Whisky', description: 'Le classique d\'Islay, tourbe riche et notes marines.', lienBoutique: 'https://boutique-exemple.com/lagavulin-16' }
-                                                    ]
-                                                }
-                                            }
+                                            { nom: 'Lagavulin', produits: { create: [{ nom: 'Lagavulin 16 ans', type: 'Whisky' }] } },
+                                            { nom: 'Ardbeg', description: 'Tourbe intense.' } // PIÈGE : Producteur sans produits
                                         ]
                                     }
                                 }
                             ]
                         }
-                    }
+                    },
+                    { nom: 'Espagne', regions: { create: [{ nom: 'Rioja' }] } }, // PIÈGE : Région vide
+                    { nom: 'Allemagne' } // PIÈGE : Pays sans aucune région
                 ]
             }
         }
     });
 
-    // --- AMÉRIQUE ---
+    // --- AMÉRIQUE DU NORD ---
     await prisma.continent.create({
         data: {
             nom: 'Amérique du Nord',
@@ -105,24 +98,79 @@ async function main() {
                         regions: {
                             create: [
                                 {
-                                    nom: 'Californie (Napa Valley)',
+                                    nom: 'Californie',
                                     producteurs: {
                                         create: [
-                                            {
-                                                nom: 'Opus One Winery',
-                                                description: 'Fruit de l\'association entre le Baron Philippe de Rothschild et Robert Mondavi.',
-                                                produits: {
-                                                    create: [
-                                                        { nom: 'Opus One 2018', type: 'Vin Rouge', description: 'Assemblage bordelais magnifié par le terroir californien.' }
-                                                    ]
-                                                }
-                                            }
+                                            { nom: 'Opus One Winery', produits: { create: [{ nom: 'Opus One 2018', type: 'Vin Rouge' }] } }
+                                        ]
+                                    }
+                                },
+                                { nom: 'Kentucky' } // PIÈGE : Région vide (Prévu pour le Bourbon plus tard)
+                            ]
+                        }
+                    },
+                    {
+                        nom: 'Mexique',
+                        regions: {
+                            create: [
+                                {
+                                    nom: 'Jalisco',
+                                    producteurs: {
+                                        create: [
+                                            { nom: 'Jose Cuervo', produits: { create: [{ nom: 'Reserva de la Familia', type: 'Tequila' }] } }
                                         ]
                                     }
                                 }
                             ]
                         }
-                    }
+                    },
+                    { nom: 'Canada' }, // PIÈGE : Pays sans régions
+                    { nom: 'Cuba', regions: { create: [{ nom: 'La Havane' }] } }, // PIÈGE : Région vide
+                    { nom: 'Jamaïque' } // PIÈGE : Pays sans régions
+                ]
+            }
+        }
+    });
+
+    // --- AMÉRIQUE DU SUD ---
+    await prisma.continent.create({
+        data: {
+            nom: 'Amérique du Sud',
+            pays: {
+                create: [
+                    {
+                        nom: 'Argentine',
+                        regions: {
+                            create: [
+                                {
+                                    nom: 'Mendoza',
+                                    producteurs: {
+                                        create: [
+                                            { nom: 'Catena Zapata', produits: { create: [{ nom: 'Malbec Argentino', type: 'Vin Rouge' }] } }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        nom: 'Chili',
+                        regions: {
+                            create: [
+                                {
+                                    nom: 'Vallée de Maipo',
+                                    producteurs: {
+                                        create: [
+                                            { nom: 'Concha y Toro', produits: { create: [{ nom: 'Don Melchor', type: 'Vin Rouge' }] } }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    { nom: 'Brésil' }, // PIÈGE : Pays sans régions
+                    { nom: 'Pérou', regions: { create: [{ nom: 'Ica', producteurs: { create: [{ nom: 'Bodegas Queirolo' }] } }] } }, // PIÈGE : Producteur sans produit (Pisco)
+                    { nom: 'Uruguay' } // PIÈGE : Pays sans régions
                 ]
             }
         }
@@ -139,25 +187,109 @@ async function main() {
                         regions: {
                             create: [
                                 {
-                                    nom: 'Honshu (Kyoto)',
+                                    nom: 'Honshu',
                                     producteurs: {
                                         create: [
-                                            {
-                                                nom: 'Suntory',
-                                                description: 'Pionnier du whisky japonais depuis 1923.',
-                                                produits: {
-                                                    create: [
-                                                        { nom: 'Yamazaki 12 ans', type: 'Whisky', description: 'Whisky single malt aux notes de fruits d\'automne et de chêne Mizunara.', lienBoutique: 'https://boutique-exemple.com/yamazaki-12' },
-                                                        { nom: 'Hibiki Harmony', type: 'Whisky Blend', description: 'Un assemblage harmonieux et lumineux.' }
-                                                    ]
-                                                }
-                                            }
+                                            { nom: 'Suntory', produits: { create: [{ nom: 'Yamazaki 12 ans', type: 'Whisky' }] } },
+                                            { nom: 'Nikka' } // PIÈGE : Producteur sans produits
                                         ]
                                     }
                                 }
                             ]
                         }
-                    }
+                    },
+                    {
+                        nom: 'Taïwan',
+                        regions: {
+                            create: [
+                                {
+                                    nom: 'Yilan',
+                                    producteurs: {
+                                        create: [
+                                            { nom: 'Kavalan', produits: { create: [{ nom: 'Classic Single Malt', type: 'Whisky' }] } }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    { nom: 'Inde', regions: { create: [{ nom: 'Goa' }] } }, // PIÈGE : Région vide
+                    { nom: 'Chine' }, // PIÈGE : Pays sans régions
+                    { nom: 'Corée du Sud' } // PIÈGE : Pays sans régions
+                ]
+            }
+        }
+    });
+
+    // --- AFRIQUE ---
+    await prisma.continent.create({
+        data: {
+            nom: 'Afrique',
+            pays: {
+                create: [
+                    {
+                        nom: 'Afrique du Sud',
+                        regions: {
+                            create: [
+                                {
+                                    nom: 'Stellenbosch',
+                                    producteurs: {
+                                        create: [
+                                            { nom: 'Kanonkop', produits: { create: [{ nom: 'Paul Sauer', type: 'Vin Rouge' }] } }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    { nom: 'Maroc', regions: { create: [{ nom: 'Meknès' }] } }, // PIÈGE : Région vide
+                    { nom: 'Algérie' }, // PIÈGE : Pays sans régions
+                    { nom: 'Madagascar', regions: { create: [{ nom: 'Nosy Be', producteurs: { create: [{ nom: 'Dzama' }] } }] } }, // PIÈGE : Producteur sans produits
+                    { nom: 'Tunisie' } // PIÈGE : Pays sans régions
+                ]
+            }
+        }
+    });
+
+    // --- OCÉANIE ---
+    await prisma.continent.create({
+        data: {
+            nom: 'Océanie',
+            pays: {
+                create: [
+                    {
+                        nom: 'Australie',
+                        regions: {
+                            create: [
+                                {
+                                    nom: 'Barossa Valley',
+                                    producteurs: {
+                                        create: [
+                                            { nom: 'Penfolds', produits: { create: [{ nom: 'Grange', type: 'Vin Rouge' }] } }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        nom: 'Nouvelle-Zélande',
+                        regions: {
+                            create: [
+                                {
+                                    nom: 'Marlborough',
+                                    producteurs: {
+                                        create: [
+                                            { nom: 'Cloudy Bay', produits: { create: [{ nom: 'Sauvignon Blanc', type: 'Vin Blanc' }] } }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    { nom: 'Fidji' }, // PIÈGE : Pays sans régions
+                    { nom: 'Vanuatu' }, // PIÈGE : Pays sans régions
+                    { nom: 'Nouvelle-Calédonie (France)' } // PIÈGE : Pays sans régions
                 ]
             }
         }

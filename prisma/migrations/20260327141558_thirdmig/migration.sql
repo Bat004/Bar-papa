@@ -1,27 +1,11 @@
-/*
-  Warnings:
+-- CreateTable
+CREATE TABLE "Admin" (
+    "id" SERIAL NOT NULL,
+    "username" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
 
-  - You are about to drop the column `sousZoneId` on the `Producteur` table. All the data in the column will be lost.
-  - You are about to drop the `SousZone` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `Zone` table. If the table is not empty, all the data it contains will be lost.
-  - Added the required column `regionId` to the `Producteur` table without a default value. This is not possible if the table is not empty.
-
-*/
--- DropForeignKey
-ALTER TABLE "Producteur" DROP CONSTRAINT "Producteur_sousZoneId_fkey";
-
--- DropForeignKey
-ALTER TABLE "SousZone" DROP CONSTRAINT "SousZone_zoneId_fkey";
-
--- AlterTable
-ALTER TABLE "Producteur" DROP COLUMN "sousZoneId",
-ADD COLUMN     "regionId" INTEGER NOT NULL;
-
--- DropTable
-DROP TABLE "SousZone";
-
--- DropTable
-DROP TABLE "Zone";
+    CONSTRAINT "Admin_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "Continent" (
@@ -49,6 +33,31 @@ CREATE TABLE "Region" (
     CONSTRAINT "Region_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Producteur" (
+    "id" SERIAL NOT NULL,
+    "nom" TEXT NOT NULL,
+    "description" TEXT,
+    "regionId" INTEGER NOT NULL,
+
+    CONSTRAINT "Producteur_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Produit" (
+    "id" SERIAL NOT NULL,
+    "nom" TEXT NOT NULL,
+    "description" TEXT,
+    "type" TEXT NOT NULL,
+    "lienBoutique" TEXT,
+    "producteurId" INTEGER NOT NULL,
+
+    CONSTRAINT "Produit_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Admin_username_key" ON "Admin"("username");
+
 -- AddForeignKey
 ALTER TABLE "Pays" ADD CONSTRAINT "Pays_continentId_fkey" FOREIGN KEY ("continentId") REFERENCES "Continent"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -57,3 +66,6 @@ ALTER TABLE "Region" ADD CONSTRAINT "Region_paysId_fkey" FOREIGN KEY ("paysId") 
 
 -- AddForeignKey
 ALTER TABLE "Producteur" ADD CONSTRAINT "Producteur_regionId_fkey" FOREIGN KEY ("regionId") REFERENCES "Region"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Produit" ADD CONSTRAINT "Produit_producteurId_fkey" FOREIGN KEY ("producteurId") REFERENCES "Producteur"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

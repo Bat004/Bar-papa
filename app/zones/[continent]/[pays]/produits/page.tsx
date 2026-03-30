@@ -1,4 +1,4 @@
-import "../listes.css";
+import "../../listes.css";
 
 export default function Produits() {
     const produits = [

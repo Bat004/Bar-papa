@@ -1,9 +1,18 @@
+"use client";
+
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { useState } from "react";
+import Modal from "@/components/Modal";
+import { Pays } from "@prisma/client";
+import { headers } from 'next/headers';
 
 export default async function ContinentPage({ params }: { params: Promise<{ continent: string }> }) {
   
+    const headersList = await headers();
+    const pathname = headersList.get('x-url');
+    
     const resolvedParams = await params;
     const nomContinent = decodeURIComponent(resolvedParams.continent);
 
@@ -16,6 +25,22 @@ export default async function ContinentPage({ params }: { params: Promise<{ cont
             }
         }
     });
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedCountry, setSelectedCountry] = useState("");
+
+    const handleCountryClick = (pays: string) => {
+        setSelectedCountry(pays);
+        setIsModalOpen(true);
+    };
+
+    const setProducersLink = (pays: string) =>{
+        return `${pathname}/${pays}/producteurs`
+    };
+
+    const setProductsLink = (pays: string) => {
+        return `${pathname}/${pays}/produits`
+    };
 
     // page 404 si on ne trouve pas le pays...
     if (!continentData) {
@@ -34,15 +59,14 @@ export default async function ContinentPage({ params }: { params: Promise<{ cont
             {continentData.pays.length === 0 ? (
                 <p className="col-span-full text-center text-zinc-600 italic">Aucun pays n&apos;est encore enregistré pour ce continent.</p>
             ) : (
-                continentData.pays.map((pays) => (
-                    <Link
+                continentData.pays.map((pays: Pays) => (
+                    <button
                         key={pays.id}
-                        // Prochaine étape : on enverra vers /zones/Continent/Pays
-                        href={`/zones/${encodeURIComponent(continentData.nom)}/${encodeURIComponent(pays.nom)}`}
+                        onClick={() => handleCountryClick(pays.nom)}
                         className="flex items-center justify-center h-14 rounded-lg bg-zinc-900 text-zinc-50 font-medium transition-all hover:bg-zinc-800"
                     >
                         {pays.nom}
-                    </Link>
+                    </button>
                 ))
             )}
             </div>
@@ -51,6 +75,31 @@ export default async function ContinentPage({ params }: { params: Promise<{ cont
                 ← Retour aux continents
             </Link>
         </main>
+
+        <Modal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            title={`Explorer : ${selectedCountry}`}
+        >
+
+            <div className="flex flex-col gap-4 mt-4">
+          
+            <Link
+                href={ setProducersLink(selectedCountry) } //transmettre la zone dans l'URL
+                className="w-full text-center py-3 rounded-md bg-zinc-900 text-zinc-50 font-medium hover:bg-zinc-800 transition-colors"
+            >
+                Voir les producteurs
+            </Link>
+
+            <Link
+                href={setProductsLink(selectedCountry)}
+                className="w-full text-center py-3 rounded-md border border-zinc-900 text-zinc-900 font-medium hover:bg-zinc-100 transition-colors"
+            >
+                Voir tous les spiritueux
+            </Link>
+
+            </div>
+        </Modal>
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { headers } from 'next/headers';
 import ContinentClient from "./ContinentClient";

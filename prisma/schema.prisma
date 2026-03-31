@@ -38,6 +38,7 @@ model Producteur {
   id          Int       @id @default(autoincrement())
   nom         String
   description String?
+  logoUrl     String?
   regionId    Int
   region      Region      @relation(fields: [regionId], references: [id])
   produits    Produit[]
@@ -49,6 +50,7 @@ model Produit {
   nom          String
   description  String?
   type         String
+  imageUrl     String?
   lienBoutique String?
   producteurId Int
   producteur   Producteur @relation(fields: [producteurId], references: [id])

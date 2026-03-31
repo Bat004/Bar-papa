@@ -10,13 +10,13 @@ export default function AddProducteur(){
     const [error, setError] = useState(false);
     const router = useRouter();
 
-    const addSubmit = async (e: React.FormEvent) => {
+    const updateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(false);
 
         try{
             const res = await fetch('/api/admin/producteurs', {
-                method: 'POST',
+                method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({fullName, description, region})
             });
@@ -24,13 +24,36 @@ export default function AddProducteur(){
             if(res.ok){
                 router.push('/admin/dashboard')
                 router.refresh();
-                //faire apparaitre un pop up de confirmation
+                //pop up de confirmation
             }else{
                 setError(true);
             }
         }catch(error){
-            console.error("Erreur dans l'ajout du producteur : ", error);
+            console.error("Erreur dans la modification du producteur : ", error);
             setError(true);
         }
     };
+
+    const deletionSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(false);
+
+        try{
+            const res = await fetch('/api/admin/producteurs', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if(res.ok){
+                router.push('/admin/dashboard')
+                router.refresh();
+                //pop up de confirmation
+            }else{
+                setError(true);
+            }
+        }catch(error){
+            console.error("Erreur dans la supression du producteur : ", error);
+            setError(true);
+        }
+    }
 }

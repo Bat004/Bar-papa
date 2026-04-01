@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
     try {
@@ -30,50 +28,5 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Le producteur spécifié n'existe pas." }, { status: 400 });
         }
         return NextResponse.json({ error: "Erreur de création" }, { status: 500 });
-    }
-}
-
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-    try {
-        const id = Number.parseInt(params.id);
-        const body = await request.json();
-
-        const { nom, description, type, lienBoutique, producteurId } = body;
-
-        const updated = await prisma.produit.update({
-            where: { id },
-            data: {
-                nom,
-                description,
-                type,
-                lienBoutique,
-                producteurId: producteurId ? Number(producteurId) : undefined,
-            },
-        });
-
-        return NextResponse.json(updated);
-    } catch {
-        return NextResponse.json(
-            { error: "Échec de la mise à jour" },
-            { status: 500 }
-        );
-    }
-}
-
-
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    try {
-        const id = Number.parseInt(params.id);
-
-        await prisma.produit.delete({
-            where: { id }
-        });
-
-        return NextResponse.json({ message: "Produit supprimé" });
-    } catch {
-        return NextResponse.json(
-            { error: "Erreur lors de la suppression" },
-            { status: 500 }
-        );
     }
 }

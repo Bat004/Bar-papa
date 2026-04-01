@@ -1,145 +1,156 @@
-"use client";
-
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import FiltresProducteurs from "./FiltresProducteurs";
 import "../../listes.css";
-import { useState } from "react";
-
-const regions = [
-    {
-        nom: "Bourgogne",
-        producteurs: [
-            { id: 1, nom: "Producteur 1" },
-            { id: 2, nom: "Producteur 2" },
-            { id: 3, nom: "Producteur 3" },
-        ],
-    },
-    {
-        nom: "Alsace",
-        producteurs: [
-            { id: 4, nom: "Producteur 4" },
-            { id: 5, nom: "Producteur 5" },
-        ],
-    },
-    {
-        nom: "Bordeaux",
-        producteurs: [
-            { id: 6, nom: "Producteur 6" },
-            { id: 7, nom: "Producteur 7" },
-            { id: 8, nom: "Producteur 8" },
-        ],
-    },
-    {
-        nom: "Provence",
-        producteurs: [
-            { id: 9, nom: "Producteur 9" },
-            { id: 10, nom: "Producteur 10" },
-            { id: 11, nom: "Producteur 11" },
-        ],
-    },
-    {
-        nom: "Loire",
-        producteurs: [
-            { id: 12, nom: "Producteur 12" },
-            { id: 13, nom: "Producteur 13" },
-            { id: 14, nom: "Producteur 14" },
-            { id: 15, nom: "Producteur 15" },
-            { id: 16, nom: "Producteur 16" },
-        ],
-    },
-];
 
 const PER_PAGE = 8;
 
-const tousLesProducteurs = regions.flatMap((r) =>
-    r.producteurs.map((p) => ({ ...p, region: r.nom }))
-);
+export default async function ProducteursPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ continent: string; pays: string }>;
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+    // 1. On attend la résolution des paramètres de l'URL
+    const resolvedParams = await params;
+    const resolvedSearchParams = await searchParams;
 
-export default function Producteurs() {
-    const [filtreOuvert, setFiltreOuvert] = useState(false);
-    const [page, setPage] = useState(1);
+    const nomContinent = decodeURIComponent(resolvedParams.continent);
+    const nomPays = decodeURIComponent(resolvedParams.pays);
 
-    const totalPages = Math.ceil(tousLesProducteurs.length / PER_PAGE);
-    const producteursDePage = tousLesProducteurs.slice(
-        (page - 1) * PER_PAGE,
-        page * PER_PAGE
-    );
+    // 2. On lit les filtres depuis l'URL (searchParams)
+    const page = Number(resolvedSearchParams.page) || 1;
+    const search = typeof resolvedSearchParams.search === 'string' ? resolvedSearchParams.search : "";
+    const regionsFilter = typeof resolvedSearchParams.regions === 'string' 
+        ? resolvedSearchParams.regions.split(",") 
+        : [];
 
-    const regionsPage = regions
-        .map((r) => ({
-            ...r,
-            producteurs: r.producteurs.filter((p) =>
-                producteursDePage.some((pd) => pd.id === p.id)
-            ),
-        }))
-        .filter((r) => r.producteurs.length > 0);
+    // 3. On récupère TOUTES les régions de ce pays pour alimenter le menu déroulant
+    const paysData = await prisma.pays.findFirst({
+        where: { nom: nomPays, continent: { nom: nomContinent } },
+        include: { regions: { select: { nom: true } } }
+    });
+
+    if (!paysData) return notFound();
+    const regionsDisponibles = paysData.regions.map(r => r.nom).sort();
+
+    // 4. On prépare les conditions de recherche pour Prisma
+    const conditionsPrisma: Prisma.ProducteurWhereInput = {
+        region: { paysId: paysData.id } // Toujours limiter au pays actuel
+    };
+
+    if (search) {
+        conditionsPrisma.nom = { contains: search, mode: "insensitive" }; // Recherche globale
+    }
+
+    if (regionsFilter.length > 0) {
+        // On remplace complètement l'objet 'region' pour rassurer TypeScript
+        conditionsPrisma.region = { 
+            paysId: paysData.id,
+            nom: { in: regionsFilter } 
+        };
+    }
+
+    // 5. On compte le total pour la pagination
+    const totalProducteurs = await prisma.producteur.count({ where: conditionsPrisma });
+    const totalPages = Math.ceil(totalProducteurs / PER_PAGE);
+
+    // 6. On récupère les producteurs paginés et triés (par région, puis par nom)
+    const producteurs = await prisma.producteur.findMany({
+        where: conditionsPrisma,
+        orderBy: [
+            { region: { nom: "asc" } },
+            { nom: "asc" }
+        ],
+        skip: (page - 1) * PER_PAGE,
+        take: PER_PAGE,
+        include: { region: true } // On inclut la région pour pouvoir afficher son nom
+    });
+
+    // 7. Petite astuce JS : On groupe les producteurs par région pour l'affichage
+    const producteursParRegion = producteurs.reduce((acc, producteur) => {
+        const regionNom = producteur.region.nom;
+        if (!acc[regionNom]) acc[regionNom] = [];
+        acc[regionNom].push(producteur);
+        return acc;
+    }, {} as Record<string, typeof producteurs>);
+
+    // Création de l'URL de base pour la pagination
+    const createPageURL = (pageNumber: number) => {
+        const params = new URLSearchParams();
+        if (search) params.set("search", search);
+        if (regionsFilter.length > 0) params.set("regions", regionsFilter.join(","));
+        params.set("page", pageNumber.toString());
+        return `?${params.toString()}`;
+    };
 
     return (
         <div className="page">
             <header className="header">
-                <h1>Producteurs</h1>
+                <h1>Producteurs de {nomPays}</h1>
             </header>
 
-            <div className="search-bar">
-                <div className="search-wrapper">
-                    <input
-                        type="text"
-                        placeholder="Rechercher un producteur..."
-                        className="search-input"
-                    />
-                </div>
-                <div className="filter-container">
-                    <button
-                        className="filter-button"
-                        onClick={() => setFiltreOuvert(!filtreOuvert)}
-                    >
-                        Filtrer
-                    </button>
-                    {filtreOuvert && (
-                        <div className="filter-panel">
-                            <p className="filter-title">Régions</p>
-                            {regions.map((r) => (
-                                <label key={r.nom} className="filter-option">
-                                    <input type="checkbox" />
-                                    {r.nom}
-                                </label>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
+            {/* Notre Client Component qui gère la barre de recherche et les cases à cocher */}
+            <FiltresProducteurs regionsDisponibles={regionsDisponibles} />
 
             <div className="liste-content">
-                {regionsPage.map((region) => (
-                    <div key={region.nom}>
-                        <h2 className="region-title">{region.nom}</h2>
-                        {region.producteurs.map((producteur) => (
-                            <div key={producteur.id} className="producteur-card">
-                                <div className="producteur-image" />
-                                <span className="producteur-nom">{producteur.nom}</span>
-                                <button className="decouvrir-button">Découvrir →</button>
-                            </div>
-                        ))}
-                    </div>
-                ))}
+                {Object.keys(producteursParRegion).length === 0 ? (
+                    <p className="text-center text-gray-500 mt-8">Aucun producteur ne correspond à votre recherche.</p>
+                ) : (
+                    Object.entries(producteursParRegion).map(([regionNom, prods]) => (
+                        <div key={regionNom}>
+                            <h2 className="region-title">{regionNom}</h2>
+                            {prods.map((producteur) => (
+                                <div key={producteur.id} className="producteur-card">
+                                    {/* Gestion du logo : S'il y a un logoUrl en BDD on l'affiche, sinon on met un carré gris par défaut */}
+                                    {producteur.logoUrl ? (
+                                        <Image 
+                                            src={producteur.logoUrl} 
+                                            alt={`Logo ${producteur.nom}`} 
+                                            width={100} 
+                                            height={100} 
+                                            className="producteur-image object-contain" 
+                                        />
+                                    ) : (
+                                        <div className="producteur-image bg-zinc-200 flex items-center justify-center text-xs text-zinc-500">Logo</div>
+                                    )}
+                                    
+                                    <span className="producteur-nom">{producteur.nom}</span>
+                                    
+                                    <Link href={`/zones/${encodeURIComponent(nomContinent)}/${encodeURIComponent(nomPays)}/producteurs/${producteur.id}`}>
+                                        <button className="decouvrir-button">Découvrir →</button>
+                                    </Link>
+                                </div>
+                            ))}
+                        </div>
+                    ))
+                )}
             </div>
 
-            <div className="pagination">
-                <button
-                    className="pagination-btn"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                >
-                    &lt;
-                </button>
-                <span className="pagination-info">{page}</span>
-                <button
-                    className="pagination-btn"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                >
-                    &gt;
-                </button>
-                <span className="pagination-total">Page {page} / {totalPages}</span>
-            </div>
+            {/* Pagination avec des vrais liens (meilleur pour le SEO que des boutons onClick) */}
+            {totalPages > 1 && (
+                <div className="pagination">
+                    {page > 1 ? (
+                        <Link href={createPageURL(page - 1)} className="pagination-btn">&lt;</Link>
+                    ) : (
+                        <span className="pagination-btn opacity-50 cursor-not-allowed">&lt;</span>
+                    )}
+                    
+                    <span className="pagination-info">{page}</span>
+                    
+                    {page < totalPages ? (
+                        <Link href={createPageURL(page + 1)} className="pagination-btn">&gt;</Link>
+                    ) : (
+                        <span className="pagination-btn opacity-50 cursor-not-allowed">&gt;</span>
+                    )}
+                    
+                    <span className="pagination-total">Page {page} / {totalPages}</span>
+                </div>
+            )}
         </div>
     );
 }

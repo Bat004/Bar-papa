@@ -4,9 +4,9 @@ import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
 
-export default function AddProducteur(/*{ params }: { params: Promise<{ id: string }> }*/){
-    /*const resolvedParams = use(params); 
-    const id = resolvedParams.id;*/
+export default function AddProducteur({ params }: { params: Promise<{ id: string }> }){
+    const resolvedParams = use(params); 
+    const id = resolvedParams.id;
     
     const [fullName, setName] = useState('');
     const [description, setDescription] = useState('');
@@ -14,36 +14,34 @@ export default function AddProducteur(/*{ params }: { params: Promise<{ id: stri
     const [error, setError] = useState(false);
     const router = useRouter();
     
-    /*useEffect(() => {
-        const fetchProducteur = async () => {
-            try {
-                const res = await fetch(`/api/admin/producteurs`, {
-                    method: "GET"
-                });
-                if (res.ok) {
-                    const data = await res.json();
-
-                    setName(data.nom);
-                    setDescription(data.description || '');
-                    setRegion(data.region.nom || '');
-                }
-            } catch (err) {
-                console.error("Erreur lors du chargement :", err);
+    useEffect(() => {
+    const fetchProducteur = async () => {
+        if (!id) return;
+        try {
+            const res = await fetch(`/api/admin/producteurs/${id}`); 
+            
+            if (res.ok) {
+                const data = await res.json();
+                setName(data.nom || ''); 
+                setDescription(data.description || '');
+                setRegion(data.region?.nom || '');
             }
-        };
-
-        fetchProducteur();
-    }, [id]);*/
+        } catch (err) {
+            console.error("Erreur lors du chargement :", err);
+        }
+    };
+    fetchProducteur();
+}, [id]);
 
     const updateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(false);
 
         try{
-            const res = await fetch('/api/admin/producteurs', {
+            const res = await fetch(`/api/admin/producteurs/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({fullName, description, region})
+                body: JSON.stringify({nom : fullName, description, regionId :  region})
             });
 
             if(res.ok){
@@ -64,7 +62,7 @@ export default function AddProducteur(/*{ params }: { params: Promise<{ id: stri
         setError(false);
 
         try{
-            const res = await fetch('/api/admin/producteurs', {
+            const res = await fetch(`/api/admin/producteurs/${id}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
             });

@@ -91,3 +91,21 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         return NextResponse.json({ error: "Erreur lors de la suppression" }, { status: 500 });
     }
 }
+
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        const id = Number(await params);
+
+        const producteur = await prisma.producteur.findUnique({
+            where: { id: id }
+        });
+
+        if (!producteur) {
+            return NextResponse.json({ message: "Non trouvé" }, { status: 404 });
+        }
+
+        return NextResponse.json(producteur);
+    } catch (error) {
+        return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
+    }
+}

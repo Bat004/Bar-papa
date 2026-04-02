@@ -1,17 +1,34 @@
 'use client';
 
-import React from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from "@/components/Modal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 
 
 export default function AdminDashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [producteurCount, setProducteurCount] = useState(0);
+
+    useEffect(() => {
+        const getCount = async () => {
+            try {
+                const res = await fetch('/api/admin/dashboard'); 
+                if (res.ok) {
+                    const data = await res.json();
+                    setProducteurCount(data.count ?? 0);
+                }
+            } catch (err) {
+                console.error("Erreur chargement count:", err);
+            }
+        };
+        getCount();
+    }, []);
 
     const router = useRouter();
+
+
 
     const handleLogout = async () => {
         try {
@@ -43,7 +60,7 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 text-center">
                         <div className="border border-zinc-950 p-6">
                             <p className="text-xs uppercase font-bold mb-2">Producteurs</p>
-                            <p className="text-4xl font-light">0</p>
+                            <p className="text-4xl font-light">{producteurCount}</p>
                         </div>
                         <div className="border border-zinc-950 p-6">
                             <p className="text-xs uppercase font-bold mb-2">Ventes</p>

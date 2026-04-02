@@ -50,6 +50,7 @@ model Produit {
   nom          String
   description  String?
   type         String
+  prix         Float
   imageUrl     String?
   lienBoutique String?
   producteurId Int

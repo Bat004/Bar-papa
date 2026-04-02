@@ -2,9 +2,14 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import Modal from "@/components/Modal";
+import { useState } from "react";
+import Link from "next/link";
+
 
 
 export default function AdminDashboard() {
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const router = useRouter();
 
@@ -57,12 +62,38 @@ export default function AdminDashboard() {
                         <button className="w-full max-w-xs border border-zinc-950 py-3 font-bold hover:bg-zinc-400">
                             Gérer les Produits
                         </button>
-                        <button className="w-full max-w-xs border border-zinc-950 py-3 font-bold hover:bg-zinc-400">
-                            Ajouter un point
+                        <button
+                            className="w-full max-w-xs border border-zinc-950 py-3 font-bold hover:bg-zinc-400"
+                            onClick={() => setIsModalOpen(true)}
+                        >
+                            Ajouter un élément
                         </button>
                     </div>
                 </div>
             </main>
+
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={'Ajouter un élément'}
+            >
+                <div className="flex flex-col gap-4 mt-4">
+                    <Link
+                        href={`/admin/produits/add`}
+                        className="w-full text-center py-3 rounded-md bg-zinc-900 text-zinc-50 font-medium hover:bg-zinc-800 transition-colors"
+                    >
+                        Ajouter un produit
+                    </Link>
+
+                    <Link
+                        href={`/admin/producteurs/add`}
+                        className="w-full text-center py-3 rounded-md border border-zinc-900 text-zinc-900 font-medium hover:bg-zinc-100 transition-colors"
+                    >
+                        Ajouter un producteur
+                    </Link>
+                </div>
+            </Modal>
+
         </div>
     );
 }

@@ -4,7 +4,6 @@ import { headers } from 'next/headers';
 import ContinentClient from "./ContinentClient";
 
 export default async function ContinentPage({ params }: { params: Promise<{ continent: string }> }) {
-    // 1. Récupération des données serveurs (Headers + Prisma)
     const headersList = await headers();
     const pathname = headersList.get('x-url') || "";
     

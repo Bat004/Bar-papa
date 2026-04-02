@@ -5,7 +5,6 @@ import Link from "next/link";
 import Modal from "@/components/Modal";
 import { Pays, Continent } from "@prisma/client";
 
-// Typage pour accepter le continent et ses pays
 interface Props {
     continent: Continent & { pays: Pays[] };
     currentPathname: string;
@@ -20,7 +19,6 @@ export default function ContinentClient({ continent, currentPathname }: Props) {
         setIsModalOpen(true);
     };
 
-    // On utilise le pathname qui vient du serveur pour construire les liens
     const setProducersLink = (pays: string) => `${currentPathname}/${pays}/producteurs`;
     const setProductsLink = (pays: string) => `${currentPathname}/${pays}/produits`;
 

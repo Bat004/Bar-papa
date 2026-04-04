@@ -109,7 +109,8 @@ export default async function ProducteursPage({
                                     {/* Gestion du logo : S'il y a un logoUrl en BDD on l'affiche, sinon on met un carré gris par défaut */}
                                     {producteur.logoUrl ? (
                                         <Image 
-                                            src={producteur.logoUrl} 
+
+                                            src={producteur.logoUrl}
                                             alt={`Logo ${producteur.nom}`} 
                                             width={100} 
                                             height={100} 

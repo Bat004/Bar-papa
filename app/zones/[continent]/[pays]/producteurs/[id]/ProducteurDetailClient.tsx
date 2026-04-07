@@ -103,14 +103,43 @@ export default function ProducteurDetailClient({
                                             <Link 
                                                 key={produit.id}
                                                 href={`/zones/${encodeURIComponent(continent)}/${encodeURIComponent(pays)}/produits/${produit.id}`}
-                                                className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 shadow-sm hover:shadow-md transition-shadow no-underline group"
+                                                className="flex items-center gap-4 bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-300 border border-transparent hover:border-orange-200 no-underline group"
                                             >
-                                                <span className="flex-1 text-sm font-medium text-zinc-900 group-hover:text-orange-600 transition-colors">
-                                                    {produit.nom}
-                                                </span>
-                                                <span className="text-sm font-bold text-orange-600">
-                                                    {Number(produit.prix).toFixed(2)} €
-                                                </span>
+                                                {/* L'image du produit à gauche */}
+                                                <div className="relative w-16 h-16 rounded-md overflow-hidden bg-zinc-100 flex-shrink-0">
+                                                    {/* Si tu as une propriété imageUrl dans ton modèle Produit */}
+                                                    {produit.imageUrl ? (
+                                                        <Image
+                                                            src={produit.imageUrl}
+                                                            alt={produit.nom}
+                                                            fill
+                                                            className="object-cover"
+                                                            sizes="64px"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-[10px] text-zinc-400 text-center">
+                                                            Sans image
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Les infos au centre */}
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="block text-base font-semibold text-zinc-900 group-hover:text-orange-600 transition-colors truncate">
+                                                        {produit.nom}
+                                                    </span>
+                                                    <span className="block text-sm font-bold text-zinc-700 mt-1">
+                                                        {Number(produit.prix).toFixed(2)} €
+                                                    </span>
+                                                </div>
+
+                                                {/* Le CTA stylé à droite (animé au hover) */}
+                                                <div className="flex items-center gap-2 pr-2 text-sm font-medium text-orange-600 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
+                                                    <span className="hidden sm:inline">Découvrir</span>
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+                                                    </svg>
+                                                </div>
                                             </Link>
                                         ))}
                                     </div>

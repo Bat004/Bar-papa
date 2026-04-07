@@ -83,13 +83,13 @@ export default async function ProductPage({
               )}
             </div>
 
-            {/* BOUTON VOIR PRODUCTEUR - Dirige vers la page du producteur */}
-            <Link
-              href={`/producteurs/${product.producteur.id}`} 
-              className="block w-full py-3 px-4 bg-zinc-900 text-white text-center font-medium rounded-lg hover:bg-zinc-800 transition-colors"
-            >
-              Voir le producteur
-            </Link>
+            {/* BOUTON VOIR PRODUCTEUR - Dirige vers la page du producteur avec le contexte géographique */}
+              <Link
+                href={`/zones/${encodeURIComponent(continentDecoded)}/${encodeURIComponent(paysDecoded)}/producteurs/${product.producteur.id}`} 
+                className="block w-full py-3 px-4 bg-zinc-900 text-white text-center font-medium rounded-lg hover:bg-zinc-800 transition-colors"
+              >
+                Voir le producteur
+              </Link>
           </div>
 
           {/* COLONNE CENTRE - INFORMATIONS PRODUIT */}

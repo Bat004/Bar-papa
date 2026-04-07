@@ -91,6 +91,7 @@ export default async function ProducteursPage({
     return (
         <div className="page">
             <header className="header">
+                <Link href={`/zones/${encodeURIComponent(nomContinent)}`} className="btn-retour">← Retour</Link>
                 <h1>Producteurs de {nomPays}</h1>
             </header>
 

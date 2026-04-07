@@ -193,7 +193,12 @@ export default function AdminDashboard() {
             case 'regions':
                 return (
                     <div className="w-full overflow-x-auto">
-                        <h2 className="text-xl font-bold uppercase mb-4">Liste des Régions</h2>
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold uppercase">Liste des Régions</h2>
+                            <Link href="/admin/regions/" className="border border-zinc-950 px-4 py-2 text-sm font-bold hover:bg-zinc-400">
+                                + Ajouter
+                            </Link>
+                        </div>
                         <table className="w-full border-collapse border border-zinc-950 text-left">
                             <thead className="bg-zinc-400">
                                 <tr>

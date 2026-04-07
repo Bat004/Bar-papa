@@ -56,6 +56,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
         return NextResponse.json(produit);
     } catch (error) {
+        console.error('Erreur :', error);
         return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
     }
 }

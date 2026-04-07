@@ -64,7 +64,7 @@ export default function AddProducteur(){
                 <form onSubmit={addSubmit} className="flex flex-col gap-6">
                     {error && (
                         <p className="text-red-600 text-xs text-center font-medium bg-red-100 py-2 rounded">
-                            Une erreur est survenue lors de l'ajout.
+                            Une erreur est survenue lors de l&apos;ajout.
                         </p>
                     )}
 

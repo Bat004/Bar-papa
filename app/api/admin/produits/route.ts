@@ -45,6 +45,7 @@ export async function GET(){
 
         return NextResponse.json(produits);
     }catch(error){
+        console.error('Erreur :', error);
         return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
     }
 }

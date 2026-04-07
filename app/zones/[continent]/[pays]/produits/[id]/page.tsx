@@ -94,7 +94,7 @@ export default async function ProductPage({
 
           {/* COLONNE CENTRE - INFORMATIONS PRODUIT */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg p-6 shadow-md h-full">
+            <div className="bg-white rounded-lg p-6 shadow-md h-full flex flex-col">
               <h1 className="text-3xl font-bold mb-4 text-zinc-950">
                 {product.nom}
               </h1>
@@ -105,13 +105,13 @@ export default async function ProductPage({
                 </span>
               </div>
 
-              <div className="mb-6">
+              <div className="mb-6 flex-1">
                 <p className="text-zinc-700 leading-relaxed text-base">
                   {product.description || "Aucune description n'a été fournie pour ce produit."}
                 </p>
               </div>
 
-              <div className="border-t border-zinc-200 pt-4">
+              <div className="border-t border-zinc-200 pt-4 mb-6">
                 <div className="flex items-baseline gap-2">
                   <span className="text-zinc-600 text-sm">Prix :</span>
                   <span className="text-4xl font-bold text-orange-600">
@@ -119,6 +119,22 @@ export default async function ProductPage({
                   </span>
                 </div>
               </div>
+
+              {/* NOUVEAU BOUTON : Aller sur la boutique */}
+              <a 
+                href={product.lienBoutique || "https://lebarapapa.com/boutique"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 px-4 bg-orange-600 text-white text-center font-bold text-lg rounded-lg shadow-sm hover:bg-orange-700 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex justify-center items-center gap-2"
+              >
+                <span>Acheter ce produit</span>
+                {/* Petite icône de lien externe */}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </a>
 
               <div className="mt-6 p-4 bg-zinc-50 rounded-lg border border-zinc-200">
                 <p className="text-xs text-zinc-600 uppercase tracking-wide mb-2">Producteur</p>

@@ -4,7 +4,14 @@ import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
 
+interface Region {
+    id: string;
+    nom: string
+}
+
 export default function UpdateProducteur({ params }: { params: Promise<{ id: string }> }){
+    const [regions, setRegions] = useState<Region[]>([]);
+
     const resolvedParams = use(params); 
     const id = resolvedParams.id;
     
@@ -13,6 +20,17 @@ export default function UpdateProducteur({ params }: { params: Promise<{ id: str
     const [region, setRegion] = useState('');
     const [error, setError] = useState(false);
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchRegions = async () => {
+            const res = await fetch('/api/admin/regions');
+            if(res.ok){
+                const data = await res.json();
+                setRegions(data);
+            }
+        };
+        fetchRegions();
+    }, []);
     
     useEffect(() => {
     const fetchProducteur = async () => {
@@ -108,15 +126,20 @@ export default function UpdateProducteur({ params }: { params: Promise<{ id: str
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-tighter">Région</label>
-                        <input
-                            type="text"
-                            placeholder="entrez une région"
+                        <label className="text-xs font-bold uppercase tracking-tighter">Producteur</label>
+                        <select
                             value={region}
                             onChange={(e) => setRegion(e.target.value)}
-                            className="border border-zinc-950 bg-transparent px-4 py-2 outline-none focus:bg-zinc-200 transition-colors placeholder:text-zinc-500"
+                            className="border border-zinc-950 bg-transparent px-4 py-2 outline-none focus:bg-zinc-200 transition-colors text-zinc-950 appearance-none"
                             required
-                        />
+                        >
+                            <option value="">Sélectionnez une région</option>
+                            {regions.map((r) => (
+                                <option key={r.nom} value={r.nom}>
+                                    {r.nom}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="flex flex-col gap-2">

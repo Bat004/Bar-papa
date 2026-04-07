@@ -38,6 +38,7 @@ CREATE TABLE "Producteur" (
     "id" SERIAL NOT NULL,
     "nom" TEXT NOT NULL,
     "description" TEXT,
+    "logoUrl" TEXT,
     "regionId" INTEGER NOT NULL,
 
     CONSTRAINT "Producteur_pkey" PRIMARY KEY ("id")
@@ -49,6 +50,8 @@ CREATE TABLE "Produit" (
     "nom" TEXT NOT NULL,
     "description" TEXT,
     "type" TEXT NOT NULL,
+    "prix" DOUBLE PRECISION NOT NULL,
+    "imageUrl" TEXT,
     "lienBoutique" TEXT,
     "producteurId" INTEGER NOT NULL,
 

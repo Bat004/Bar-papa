@@ -7,13 +7,36 @@ import Link from "next/link";
 
 type TabType = 'overview' | 'produits' | 'producteurs' | 'regions' | 'statistiques';
 
+type DashboardItem = {
+    id: number | string;
+    nom?: string;
+    type?: string;
+    prix?: number;
+    description?: string;
+    producteur?: { nom: string };
+    region?: { nom: string };
+    pays?: { nom: string };
+};
+
 export default function AdminDashboard() {
+    // État par défaut
     const [activeTab, setActiveTab] = useState<TabType>('overview');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [counts, setCounts] = useState({ produits: 0, producteurs: 0, regions: 0 });
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<DashboardItem[]>([]);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+
+    // NOUVEAU : On regarde s'il y a un paramètre dans l'URL (ex: ?tab=produits)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const tabFromUrl = params.get('tab') as TabType;
+        
+        // Si un paramètre existe et qu'il correspond à un de tes onglets, on l'active
+        if (tabFromUrl) {
+            setActiveTab(tabFromUrl);
+        }
+    }, []);
 
     useEffect(() => {
         const fetchCounts = async () => {
@@ -222,7 +245,7 @@ export default function AdminDashboard() {
                         onClick={() => setActiveTab('overview')}
                         className={`w-full text-left px-4 py-3 font-bold uppercase text-sm transition-colors ${activeTab === 'overview' ? 'bg-zinc-950 text-zinc-50' : 'hover:bg-zinc-400'}`}
                     >
-                        Vue d'ensemble
+                        Vue d&apos;ensemble
                     </button>
                     <button 
                         onClick={() => setActiveTab('produits')}

@@ -30,3 +30,20 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Erreur de création" }, { status: 500 });
     }
 }
+
+export async function GET(){
+    try{
+        const produits = await prisma.produit.findMany({
+            include: {producteur: true},
+            orderBy: {
+                nom: 'asc'
+            }
+        });
+
+        if (!produits) return NextResponse.json({ message: "Non trouvé" }, { status: 404 });
+
+        return NextResponse.json(produits);
+    }catch(error){
+        return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
+    }
+}

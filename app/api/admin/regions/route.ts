@@ -42,5 +42,17 @@ export async function POST(request: Request) {
             { error: "Erreur lors de la création de la région." },
             { status: 500 }
         );
+
+export async function GET() {
+    try{
+        const regions = await prisma.region.findMany({
+            include: {pays: true},
+        });
+
+        if (!regions) return NextResponse.json({ message: "Non trouvé" }, { status: 404 });
+
+        return NextResponse.json(regions);
+    }catch(error){
+        return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
     }
 }

@@ -36,3 +36,21 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Une erreur est survenue lors de la création." }, { status: 500 });
     }
 }
+
+export async function GET() {
+    try{
+        const producteurs = await prisma.producteur.findMany({
+            include: {region: true},
+            orderBy: {
+                nom: 'asc'
+            }
+        });
+
+        if (!producteurs) return NextResponse.json({ message: "Non trouvé" }, { status: 404 });
+
+        return NextResponse.json(producteurs);
+    }catch(error){
+        console.error("Erreur lors de la récupération (GET) :", error);
+        return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
+    }
+}

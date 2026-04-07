@@ -4,10 +4,10 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { nom, description, type, lienBoutique, producteurId } = body;
+        const { nom, description, type, prix, lienBoutique, producteurId } = body;
 
-        if (!nom || !type || !producteurId) {
-            return NextResponse.json({ error: "Nom, Type et Producteur requis" }, { status: 400 });
+        if (!nom || !type || !producteurId || prix === undefined) {
+            return NextResponse.json({ error: "Nom, Type, Prix et Producteur requis" }, { status: 400 });
         }
 
         const nouveauProduit = await prisma.produit.create({
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
                 nom,
                 description,
                 type,
+                prix: Number(prix),
                 lienBoutique,
                 producteurId: Number(producteurId),
             },

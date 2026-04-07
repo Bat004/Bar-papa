@@ -1,15 +1,23 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(request: Request){
-    try{
-        const nbProducteurs = await prisma.producteur.count();
+export async function GET() {
+    try {
+        const produitsCount = await prisma.produit.count();
+        const producteursCount = await prisma.producteur.count();
+        const regionsCount = await prisma.region.count();
 
-        if (!nbProducteurs) return NextResponse.json({ message: "Non trouvé" }, { status: 404 });
+        return NextResponse.json({
+            produitsCount,
+            producteursCount,
+            regionsCount
+        });
 
-        return NextResponse.json({count: nbProducteurs});
-    }catch(error){
-        console.error("Erreur Count Producteurs:", error);
-        return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
+    } catch (error) {
+        console.error("Erreur Dashboard Stats:", error);
+        return NextResponse.json(
+            { message: "Erreur lors du calcul des statistiques" },
+            { status: 500 }
+        );
     }
 }

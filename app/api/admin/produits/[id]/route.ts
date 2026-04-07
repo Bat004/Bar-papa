@@ -33,7 +33,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         const id = Number.parseInt(idStr);
 
         await prisma.produit.delete({
-            where: { id }
+            where: { id: id }
         });
 
         return NextResponse.json({ message: "Produit supprimé" });

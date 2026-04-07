@@ -134,27 +134,59 @@ export default async function ProduitsPage({
                             
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
                                 {listeProduits.map((produit) => (
-                                    <div key={produit.id} className="item-card" style={{ border: '1px solid #eaeaea', padding: '15px', borderRadius: '12px', width: '260px', backgroundColor: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                                        {produit.imageUrl ? (
-                                            <div style={{ position: 'relative', width: '100%', height: '220px' }}>
-                                                <Image 
-                                                    src={produit.imageUrl} 
-                                                    alt={produit.nom} 
-                                                    fill
-                                                    style={{ objectFit: 'cover', borderRadius: '8px' }}
-                                                    sizes="(max-width: 768px) 100vw, 260px"
-                                                />
+                                    <Link 
+                                        key={produit.id} 
+                                        href={`/zones/${encodeURIComponent(continentActuel)}/${encodeURIComponent(paysActuel)}/produits/${produit.id}`}
+                                        className="group no-underline text-inherit"
+                                    >
+                                        <div className="relative border border-zinc-200 p-4 rounded-2xl w-[260px] bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex flex-col h-full">
+                                            
+                                            {/* IMAGE AVEC EFFET ZOOM AU SURVOL */}
+                                            <div className="relative w-full h-[220px] rounded-xl overflow-hidden mb-4 bg-zinc-100">
+                                                {produit.imageUrl ? (
+                                                    <Image 
+                                                        src={produit.imageUrl} 
+                                                        alt={produit.nom} 
+                                                        fill
+                                                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                                        sizes="(max-width: 768px) 100vw, 260px"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-zinc-400 text-sm font-medium">Sans image</div>
+                                                )}
                                             </div>
-                                        ) : (
-                                            <div style={{ width: '100%', height: '220px', backgroundColor: '#f0f0f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>Sans image</div>
-                                        )}
-                                        <h3 style={{ margin: '15px 0 5px 0', fontSize: '1.1em' }}>{produit.nom}</h3>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '0.85em', color: '#666', background: '#f5f5f5', padding: '3px 8px', borderRadius: '10px' }}>{produit.type}</span>
-                                            <span style={{ fontWeight: 'bold', color: '#d35400', fontSize: '1.1em' }}>{produit.prix} €</span>
+
+                                            {/* INFORMATIONS PRODUIT */}
+                                            <h3 className="font-bold text-lg mb-2 text-zinc-900 truncate">{produit.nom}</h3>
+                                            
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-xs font-semibold text-zinc-600 bg-zinc-100 px-2.5 py-1 rounded-md tracking-wide">
+                                                    {produit.type}
+                                                </span>
+                                                <span className="font-bold text-orange-600 text-lg">
+                                                    {produit.prix} €
+                                                </span>
+                                            </div>
+                                            
+                                            <p className="text-sm text-zinc-500 mb-4 truncate">
+                                                De : {produit.producteur.nom}
+                                            </p>
+
+                                            {/* CALL TO ACTION (CTA) ANIME */}
+                                            <div className="mt-auto pt-3 border-t border-zinc-100 flex items-center justify-between text-zinc-900 font-semibold group-hover:text-orange-600 transition-colors duration-300">
+                                                <span className="text-sm">Découvrir</span>
+                                                <svg 
+                                                    className="w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1" 
+                                                    fill="none" 
+                                                    stroke="currentColor" 
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                                </svg>
+                                            </div>
+                                            
                                         </div>
-                                        <p style={{ margin: '10px 0 0 0', fontSize: '0.9em', color: '#888' }}>De: {produit.producteur.nom}</p>
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         </div>

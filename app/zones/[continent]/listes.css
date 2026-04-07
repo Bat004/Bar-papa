@@ -10,8 +10,26 @@
 }
 
 .header {
+    position: relative;
     padding: 48px 24px;
     text-align: center;
+}
+
+.btn-retour {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 6px 12px;
+    background-color: #f4f4f5;
+    border: 1px solid #a1a1aa;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #3f3f46;
+    text-decoration: none;
+}
+
+.btn-retour:hover {
+    background-color: #e4e4e7;
 }
 
 .header h1 {
@@ -187,7 +205,6 @@
     font-size: 0.875rem;
     cursor: pointer;
 }
-
 .pagination-btn:disabled {
     opacity: 0.4;
     cursor: default;

@@ -1,10 +1,17 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
 
+interface Producteur {
+  id: string;
+  nom: string;
+}
+
 export default function addProduit(){
+    const [producteurs, setProducteurs] = useState<Producteur[]>([]);
+
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [type, setType] = useState('');
@@ -12,6 +19,17 @@ export default function addProduit(){
     const [idproducteur, setIdProducteur] = useState('');
     const [error, setError] = useState(false);
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchProducteurs =  async () => {
+            const res = await fetch('/api/admin/producteurs');
+            if(res.ok){
+                const data = await res.json();
+                setProducteurs(data);
+            }
+        };
+        fetchProducteurs();
+    }, []);
 
     const addSubmit = async (e: React.FormEvent) => {
             e.preventDefault();
@@ -100,15 +118,20 @@ export default function addProduit(){
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-tighter">ID du producteur</label>
-                        <input
-                            type="text"
-                            placeholder="entrez l'identifiant du producteur'"
+                        <label className="text-xs font-bold uppercase tracking-tighter">Producteur</label>
+                        <select
                             value={idproducteur}
                             onChange={(e) => setIdProducteur(e.target.value)}
-                            className="border border-zinc-950 bg-transparent px-4 py-2 outline-none focus:bg-zinc-200 transition-colors placeholder:text-zinc-500"
+                            className="border border-zinc-950 bg-transparent px-4 py-2 outline-none focus:bg-zinc-200 transition-colors text-zinc-950 appearance-none"
                             required
-                        />
+                        >
+                            <option value="">Sélectionnez un producteur</option>
+                            {producteurs.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.nom}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="flex flex-col gap-3 mt-4">

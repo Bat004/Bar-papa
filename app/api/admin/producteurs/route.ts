@@ -50,6 +50,7 @@ export async function GET() {
 
         return NextResponse.json(producteurs);
     }catch(error){
+        console.error("Erreur lors de la récupération (GET) :", error);
         return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
     }
 }

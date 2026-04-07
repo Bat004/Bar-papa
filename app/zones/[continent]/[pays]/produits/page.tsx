@@ -1,69 +1,104 @@
-'use client';
-
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import FiltresProduits from './FiltresProduits';
 import "../../listes.css";
 
-// Données statiques de démonstration (Site Vitrine)
-const staticProducts = [
-    {
-        id: 1,
-        nom: 'La Tâche Grand Cru 2018',
-        type: 'Vin Rouge',
-        prix: 4500.00,
-        imageUrl: 'https://images.unsplash.com/photo-1586370434639-0fe43b2d32e6?q=80&w=400',
-        producteur: 'Domaine de la Romanée-Conti',
-        region: 'Bourgogne'
-    },
-    {
-        id: 2,
-        nom: 'Romanée-Conti Grand Cru',
-        type: 'Vin Rouge',
-        prix: 18000.00,
-        imageUrl: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?q=80&w=400',
-        producteur: 'Domaine de la Romanée-Conti',
-        region: 'Bourgogne'
-    },
-    {
-        id: 3,
-        nom: 'Montrachet Grand Cru',
-        type: 'Vin Blanc',
-        prix: 850.00,
-        imageUrl: 'https://images.unsplash.com/photo-1569914104212-07ebf4ec6829?q=80&w=400',
-        producteur: 'Domaine Leflaive',
-        region: 'Bourgogne'
-    },
-    {
-        id: 4,
-        nom: 'Krug Grande Cuvée',
-        type: 'Champagne',
-        prix: 250.00,
-        imageUrl: 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=400',
-        producteur: 'Krug',
-        region: 'Champagne'
-    },
-    {
-        id: 5,
-        nom: 'Lagavulin 16 ans',
-        type: 'Whisky',
-        prix: 89.90,
-        imageUrl: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?q=80&w=400',
-        producteur: 'Lagavulin',
-        region: 'Islay'
+export default async function ProduitsPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ continent: string; pays: string }>;
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+    const resolvedParams = await searchParams;
+    const resolvedRouteParams = await params;
+
+    // 1. On décode les URL (ex: "%C3%89tats-Unis" redevient "États-Unis")
+    const continentActuel = decodeURIComponent(resolvedRouteParams.continent);
+    const paysActuel = decodeURIComponent(resolvedRouteParams.pays);
+
+    const searchQuery = typeof resolvedParams.q === 'string' ? resolvedParams.q : undefined;
+    const regionsFiltrees = typeof resolvedParams.region === 'string' ? [resolvedParams.region] : resolvedParams.region || [];
+    const typesFiltres = typeof resolvedParams.type === 'string' ? [resolvedParams.type] : resolvedParams.type || [];
+    const minParam = resolvedParams.min ? Number(resolvedParams.min) : undefined;
+    const maxParam = resolvedParams.max ? Number(resolvedParams.max) : undefined;
+
+    // On oblige Prisma à ne chercher QUE dans le pays de l'URL
+    const whereCondition: Prisma.ProduitWhereInput = {
+        producteur: {
+            region: {
+                // Filtre obligatoire sur le pays
+                pays: { nom: { equals: paysActuel, mode: 'insensitive' } },
+                // Si des régions sont cochées, on les ajoute ici
+                ...(regionsFiltrees.length > 0 ? { nom: { in: regionsFiltrees } } : {})
+            }
+        }
+    };
+    
+    if (searchQuery) {
+        whereCondition.nom = { contains: searchQuery, mode: 'insensitive' };
     }
-];
+    
+    if (typesFiltres.length > 0) {
+        whereCondition.type = { in: typesFiltres };
+    }
 
-export default function ProduitsPage() {
-    const params = useParams();
-    const continentActuel = params?.continent ? decodeURIComponent(params.continent as string) : 'Europe';
-    const paysActuel = params?.pays ? decodeURIComponent(params.pays as string) : 'France';
+    if (minParam !== undefined || maxParam !== undefined) {
+        whereCondition.prix = {};
+        if (minParam !== undefined) whereCondition.prix.gte = minParam;
+        if (maxParam !== undefined) whereCondition.prix.lte = maxParam;
+    }
 
-    // Regroupement statique par région pour l'affichage
-    const regions = Array.from(new Set(staticProducts.map(p => p.region)));
+    // 3. Récupération des produits avec le bon filtre
+    const produits = await prisma.produit.findMany({
+        where: whereCondition,
+        include: {
+            producteur: {
+                include: { region: true }
+            }
+        }
+    });
+
+    // 4. On récupère le min/max UNIQUEMENT pour les produits de ce pays
+    const aggregations = await prisma.produit.aggregate({
+        where: { producteur: { region: { pays: { nom: { equals: paysActuel, mode: 'insensitive' } } } } },
+        _min: { prix: true },
+        _max: { prix: true },
+    });
+    const minPriceBase = aggregations._min.prix || 0;
+    const maxPriceBase = aggregations._max.prix || 1000;
+
+    // 5. On récupère les types et les régions UNIQUEMENT pour ce pays
+    const typesBruts = await prisma.produit.findMany({ 
+        where: { producteur: { region: { pays: { nom: { equals: paysActuel, mode: 'insensitive' } } } } },
+        select: { type: true }, 
+        distinct: ['type'] 
+    });
+    const typesUniques = typesBruts.map(t => t.type);
+
+    const regionsBrutes = await prisma.region.findMany({
+        where: { 
+            pays: { nom: { equals: paysActuel, mode: 'insensitive' } },
+            producteurs: { some: { produits: { some: {} } } } 
+        },
+        select: { nom: true }
+    });
+    const regionsUniques = regionsBrutes.map(r => r.nom);
+
+    // 6. Regroupement par région
+    const produitsParRegion = produits.reduce((acc, produit) => {
+        const nomRegion = produit.producteur.region.nom;
+        if (!acc[nomRegion]) {
+            acc[nomRegion] = [];
+        }
+        acc[nomRegion].push(produit);
+        return acc;
+    }, {} as Record<string, typeof produits>);
 
     return (
-        <div className="page" style={{ width: '100%', margin: '0 auto', padding: '20px', minHeight: '100vh', backgroundColor: '#d4d4d8' }}>
+        <div className="page" style={{ width: '100%', margin: '0 auto', padding: '20px', minHeight: '100vh' }}>
             
             {/* BOUTON RETOUR */}
             <div style={{ marginBottom: '20px' }}>
@@ -79,53 +114,53 @@ export default function ProduitsPage() {
             </div>
 
             <header className="header" style={{ marginBottom: '30px' }}>
-                <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>Produits : {paysActuel}</h1>
+                <h1>Produits : {paysActuel}</h1>
             </header>
 
-            {/* SECTION FILTRES (VISUELLE UNIQUEMENT) */}
-            <div style={{ marginBottom: '30px', padding: '15px', backgroundColor: '#f4f4f5', borderRadius: '12px', display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 'bold' }}>Filtres :</span>
-                <select style={{ padding: '8px', borderRadius: '6px', border: '1px solid #d4d4d8' }}><option>Toutes les régions</option></select>
-                <select style={{ padding: '8px', borderRadius: '6px', border: '1px solid #d4d4d8' }}><option>Tous les types</option></select>
-                <input type="text" placeholder="Rechercher..." style={{ padding: '8px', borderRadius: '6px', border: '1px solid #d4d4d8', flex: 1 }} />
-            </div>
+            <FiltresProduits 
+                regions={regionsUniques} 
+                types={typesUniques} 
+                minPriceBase={minPriceBase} 
+                maxPriceBase={maxPriceBase} 
+            />
 
-            <div className="produits-container">
-                {regions.map((region) => (
-                    <div key={region} className="region-section" style={{ marginBottom: '50px' }}>
-                        <h2 style={{ borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '20px', fontSize: '1.5rem', fontWeight: 'bold' }}>{region}</h2>
-                        
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
-                            {staticProducts.filter(p => p.region === region).map((produit) => (
-                                <div key={produit.id} className="item-card" style={{ border: '1px solid #eaeaea', padding: '15px', borderRadius: '12px', width: '260px', backgroundColor: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                                    <div style={{ position: 'relative', width: '100%', height: '220px' }}>
-                                        <Image 
-                                            src={produit.imageUrl} 
-                                            alt={produit.nom} 
-                                            fill
-                                            style={{ objectFit: 'cover', borderRadius: '8px' }}
-                                            sizes="260px"
-                                        />
+            {Object.keys(produitsParRegion).length === 0 ? (
+                <p style={{ textAlign: 'center', fontSize: '1.2em', color: '#666', marginTop: '50px' }}>Aucun produit ne correspond à vos filtres.</p>
+            ) : (
+                <div className="produits-container">
+                    {Object.entries(produitsParRegion).map(([region, listeProduits]) => (
+                        <div key={region} className="region-section" style={{ marginBottom: '50px' }}>
+                            <h2 style={{ borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '20px' }}>{region}</h2>
+                            
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+                                {listeProduits.map((produit) => (
+                                    <div key={produit.id} className="item-card" style={{ border: '1px solid #eaeaea', padding: '15px', borderRadius: '12px', width: '260px', backgroundColor: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                                        {produit.imageUrl ? (
+                                            <div style={{ position: 'relative', width: '100%', height: '220px' }}>
+                                                <Image 
+                                                    src={produit.imageUrl} 
+                                                    alt={produit.nom} 
+                                                    fill
+                                                    style={{ objectFit: 'cover', borderRadius: '8px' }}
+                                                    sizes="(max-width: 768px) 100vw, 260px"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div style={{ width: '100%', height: '220px', backgroundColor: '#f0f0f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>Sans image</div>
+                                        )}
+                                        <h3 style={{ margin: '15px 0 5px 0', fontSize: '1.1em' }}>{produit.nom}</h3>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '0.85em', color: '#666', background: '#f5f5f5', padding: '3px 8px', borderRadius: '10px' }}>{produit.type}</span>
+                                            <span style={{ fontWeight: 'bold', color: '#d35400', fontSize: '1.1em' }}>{produit.prix} €</span>
+                                        </div>
+                                        <p style={{ margin: '10px 0 0 0', fontSize: '0.9em', color: '#888' }}>De: {produit.producteur.nom}</p>
                                     </div>
-                                    <h3 style={{ margin: '15px 0 5px 0', fontSize: '1.1em', fontWeight: 'bold' }}>{produit.nom}</h3>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '0.85em', color: '#666', background: '#f5f5f5', padding: '3px 8px', borderRadius: '10px' }}>{produit.type}</span>
-                                        <span style={{ fontWeight: 'bold', color: '#d35400', fontSize: '1.1em' }}>{produit.prix.toFixed(2)} €</span>
-                                    </div>
-                                    <p style={{ margin: '10px 0 0 0', fontSize: '0.9em', color: '#888' }}>De: {produit.producteur}</p>
-                                    
-                                    <Link 
-                                        href={`/zones/${encodeURIComponent(continentActuel)}/${encodeURIComponent(paysActuel)}/produits/${produit.id}`} 
-                                        style={{ display: 'block', textAlign: 'center', marginTop: '12px', padding: '10px', backgroundColor: '#18181b', color: '#fff', borderRadius: '8px', fontSize: '0.9em', fontWeight: 'bold', textDecoration: 'none' }}
-                                    >
-                                        Voir le produit
-                                    </Link>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

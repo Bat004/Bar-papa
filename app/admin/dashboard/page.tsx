@@ -223,6 +223,7 @@ export default function AdminDashboard() {
                         className={`w-full text-left px-4 py-3 font-bold uppercase text-sm transition-colors ${activeTab === 'overview' ? 'bg-zinc-950 text-zinc-50' : 'hover:bg-zinc-400'}`}
                     >
                         Vue d'ensemble
+
                     </button>
                     <button 
                         onClick={() => setActiveTab('produits')}

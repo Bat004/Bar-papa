@@ -1,15 +1,33 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from "next/link";
 
+interface Region {
+    id: string;
+    nom: string
+}
+
 export default function AddProducteur(){
+    const [regions, setRegions] = useState<Region[]>([]);
+
     const [fullName, setName] = useState('');
     const [description, setDescription] = useState('');
     const [region, setRegion] = useState('');
     const [error, setError] = useState(false);
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchRegions = async () => {
+            const res = await fetch('/api/admin/regions');
+            if(res.ok){
+                const data = await res.json();
+                setRegions(data);
+            }
+        };
+        fetchRegions();
+    }, []);
 
     const addSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -72,6 +90,23 @@ export default function AddProducteur(){
                             className="border border-zinc-950 bg-transparent px-4 py-2 outline-none focus:bg-zinc-200 transition-colors placeholder:text-zinc-500"
                             required
                         />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xs font-bold uppercase tracking-tighter">Producteur</label>
+                        <select
+                            value={region}
+                            onChange={(e) => setRegion(e.target.value)}
+                            className="border border-zinc-950 bg-transparent px-4 py-2 outline-none focus:bg-zinc-200 transition-colors text-zinc-950 appearance-none"
+                            required
+                        >
+                            <option value="">Sélectionnez une région</option>
+                            {regions.map((r) => (
+                                <option key={r.nom} value={r.nom}>
+                                    {r.nom}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="flex flex-col gap-2">

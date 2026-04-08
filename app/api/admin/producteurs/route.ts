@@ -74,9 +74,19 @@ export async function POST(request: Request) {
 export async function GET() {
     try {
         const producteurs = await prisma.producteur.findMany({
-            include: { region: true },
+            include: { 
+                region: {
+                    include: {
+                        pays: {
+                            include: {
+                                continent: true
+                            }
+                        }
+                    }
+                } 
+            },
             orderBy: {
-                nom: 'asc'
+                id: 'desc'
             }
         });
 

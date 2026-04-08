@@ -41,6 +41,7 @@ export async function GET() {
         });
         return NextResponse.json(regions);
     } catch (error) {
+        console.log(error);
         return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
     }
 }

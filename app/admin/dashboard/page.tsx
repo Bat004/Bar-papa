@@ -1,47 +1,75 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Modal from "@/components/Modal";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { Eye, Edit, Trash2 } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
 type TabType = 'overview' | 'produits' | 'producteurs' | 'regions' | 'statistiques';
 
+// Type mis à jour pour couvrir les Produits, Producteurs et Régions
 type DashboardItem = {
     id: number | string;
     nom?: string;
     type?: string;
     prix?: number;
     description?: string;
-    producteur?: { nom: string };
-    region?: { nom: string };
-    pays?: { nom: string };
+    imageUrl?: string;
+    // Utilisé quand l'élément est un Produit
+    producteur?: { 
+        nom: string;
+        region?: {
+            nom: string;
+            pays?: {
+                nom: string;
+                continent?: {
+                    nom: string;
+                }
+            }
+        }
+    };
+    // Utilisé quand l'élément est un Producteur
+    region?: {
+        nom: string;
+    };
+    // Utilisé quand l'élément est une Région
+    pays?: {
+        nom: string;
+    };
 };
 
-export default function AdminDashboard() {
-    // État par défaut
-    const [activeTab, setActiveTab] = useState<TabType>('overview');
+function DashboardContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    const initialTab = (searchParams.get('tab') as TabType) || 'overview';
+    const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [counts, setCounts] = useState({ produits: 0, producteurs: 0, regions: 0 });
     const [data, setData] = useState<DashboardItem[]>([]);
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
 
-    // NOUVEAU : On regarde s'il y a un paramètre dans l'URL (ex: ?tab=produits)
+    const [productToDelete, setProductToDelete] = useState<DashboardItem | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const tabFromUrl = params.get('tab') as TabType;
-        
-        // Si un paramètre existe et qu'il correspond à un de tes onglets, on l'active
-        if (tabFromUrl) {
-            setActiveTab(tabFromUrl);
+        const currentTab = searchParams.get('tab') as TabType;
+        if (currentTab) {
+            setActiveTab((prevTab) => currentTab !== prevTab ? currentTab : prevTab);
         }
-    }, []);
+    }, [searchParams]);
+
+    useEffect(() => {
+        router.replace(`/admin/dashboard?tab=${activeTab}`, { scroll: false });
+    }, [activeTab, router]);
 
     useEffect(() => {
         const fetchCounts = async () => {
             try {
-                // On essaie de récupérer les stats globales
                 const res = await fetch('/api/admin/dashboard');
                 if (res.ok) {
                     const stats = await res.json();
@@ -95,6 +123,39 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleDeleteConfirm = async () => {
+        if (!productToDelete) return;
+        setIsDeleting(true);
+        try {
+            const res = await fetch(`/api/admin/produits/${productToDelete.id}`, { method: 'DELETE' });
+            if (res.ok) {
+                setData(prevData => prevData.filter(item => item.id !== productToDelete.id));
+                setCounts(prev => ({ ...prev, produits: prev.produits - 1 }));
+                toast.success(`Le produit "${productToDelete.nom}" a été supprimé.`);
+            } else {
+                toast.error("Échec de la suppression.");
+            }
+        } catch (err) {
+            console.log(err);
+            toast.error("Erreur serveur lors de la suppression.");
+        } finally {
+            setIsDeleting(false);
+            setProductToDelete(null);
+        }
+    };
+
+    const getPublicLink = (item: DashboardItem) => {
+        const continent = item.producteur?.region?.pays?.continent?.nom 
+            ? encodeURIComponent(item.producteur.region.pays.continent.nom) 
+            : 'Inconnu';
+            
+        const pays = item.producteur?.region?.pays?.nom 
+            ? encodeURIComponent(item.producteur.region.pays.nom) 
+            : 'Inconnu';
+    
+        return `/zones/${continent}/${pays}/produits/${item.id}`;
+    };
+
     const renderContent = () => {
         switch (activeTab) {
             case 'overview':
@@ -119,33 +180,55 @@ export default function AdminDashboard() {
                     <div className="w-full overflow-x-auto">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold uppercase">Liste des Produits</h2>
-                            <Link href="/admin/produits/add" className="border border-zinc-950 px-4 py-2 text-sm font-bold hover:bg-zinc-400">
+                            <Link href="/admin/produits/add" className="border border-zinc-950 px-4 py-2 text-sm font-bold hover:bg-zinc-400 transition-colors">
                                 + Ajouter
                             </Link>
                         </div>
-                        <table className="w-full border-collapse border border-zinc-950 text-left">
+                        <table className="w-full border-collapse border border-zinc-950 text-left bg-zinc-100">
                             <thead className="bg-zinc-400">
                                 <tr>
+                                    <th className="border border-zinc-950 p-2 text-xs uppercase w-16 text-center">Image</th>
                                     <th className="border border-zinc-950 p-2 text-xs uppercase">Nom</th>
                                     <th className="border border-zinc-950 p-2 text-xs uppercase">Type</th>
                                     <th className="border border-zinc-950 p-2 text-xs uppercase">Prix</th>
                                     <th className="border border-zinc-950 p-2 text-xs uppercase">Producteur</th>
-                                    <th className="border border-zinc-950 p-2 text-xs uppercase">Actions</th>
+                                    <th className="border border-zinc-950 p-2 text-xs uppercase text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={5} className="p-4 text-center italic">Chargement...</td></tr>
+                                    <tr><td colSpan={6} className="p-4 text-center italic">Chargement...</td></tr>
                                 ) : data.length === 0 ? (
-                                    <tr><td colSpan={5} className="p-4 text-center italic">Aucun produit trouvé</td></tr>
+                                    <tr><td colSpan={6} className="p-4 text-center italic">Aucun produit trouvé</td></tr>
                                 ) : data.map((item) => (
-                                    <tr key={item.id} className="hover:bg-zinc-200">
-                                        <td className="border border-zinc-950 p-2">{item.nom}</td>
+                                    <tr key={item.id} className="hover:bg-zinc-200 transition-colors">
+                                        <td className="border border-zinc-950 p-2">
+                                            {item.imageUrl ? (
+                                                <div className="relative w-12 h-12 mx-auto border border-zinc-950 bg-zinc-300">
+                                                    <Image src={item.imageUrl} alt={item.nom || 'Image du produit'} fill className="object-cover" sizes="48px" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-12 h-12 mx-auto bg-zinc-300 border border-zinc-950 flex items-center justify-center text-[10px] uppercase font-bold opacity-50">
+                                                    N/A
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="border border-zinc-950 p-2 font-medium">{item.nom}</td>
                                         <td className="border border-zinc-950 p-2">{item.type}</td>
                                         <td className="border border-zinc-950 p-2">{item.prix}€</td>
                                         <td className="border border-zinc-950 p-2">{item.producteur?.nom || 'N/A'}</td>
                                         <td className="border border-zinc-950 p-2">
-                                            <Link href={`/admin/produits/update/${item.id}`} className="text-xs underline font-bold">Modifier</Link>
+                                            <div className="flex items-center justify-center gap-3">
+                                                <Link href={getPublicLink(item)} target="_blank" title="Voir sur le site public" className="p-1 hover:bg-zinc-300 border border-transparent hover:border-zinc-950 rounded transition-all">
+                                                    <Eye size={18} />
+                                                </Link>
+                                                <Link href={`/admin/produits/update/${item.id}`} title="Modifier" className="p-1 hover:bg-blue-100 text-blue-700 border border-transparent hover:border-blue-700 rounded transition-all">
+                                                    <Edit size={18} />
+                                                </Link>
+                                                <button onClick={() => setProductToDelete(item)} title="Supprimer" className="p-1 hover:bg-red-100 text-red-600 border border-transparent hover:border-red-600 rounded transition-all">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -237,6 +320,29 @@ export default function AdminDashboard() {
 
     return (
         <div className="flex min-h-screen bg-zinc-300 text-zinc-950 font-sans">
+            {/* Personnalisation brute/carrée pour coller à ton interface */}
+            <Toaster 
+                position="bottom-right" 
+                toastOptions={{
+                    style: {
+                        background: '#09090b',
+                        color: '#fafafa',
+                        border: '1px solid #09090b',
+                        borderRadius: '0px',
+                        textTransform: 'uppercase',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        padding: '16px'
+                    },
+                    success: {
+                        iconTheme: { primary: '#22c55e', secondary: '#09090b' },
+                    },
+                    error: {
+                        iconTheme: { primary: '#ef4444', secondary: '#09090b' },
+                    }
+                }} 
+            />
+
             {/* Sidebar à gauche */}
             <aside className="w-64 border-r border-zinc-950 flex flex-col">
                 <div className="p-8 border-b border-zinc-950">
@@ -286,7 +392,7 @@ export default function AdminDashboard() {
                         Ajout Rapide
                     </button>
                     <button 
-                        className="w-full text-xs border border-zinc-950 px-2 py-3 hover:bg-red-400 font-bold uppercase"
+                        className="w-full text-xs border border-zinc-950 px-2 py-3 hover:bg-red-400 font-bold uppercase transition-colors"
                         onClick={handleLogout}
                     >
                         Déconnexion
@@ -310,6 +416,7 @@ export default function AdminDashboard() {
                 </div>
             </main>
 
+            {/* Modale d'ajout rapide */}
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -331,6 +438,44 @@ export default function AdminDashboard() {
                     </Link>
                 </div>
             </Modal>
+
+            {/* Modale de confirmation de suppression */}
+            <Modal 
+                isOpen={!!productToDelete} 
+                onClose={() => !isDeleting && setProductToDelete(null)} 
+                title="Confirmer la suppression"
+            >
+                <div className="mt-4">
+                    <p className="text-base mb-6">
+                        Es-tu sûr de vouloir supprimer définitivement le produit <span className="font-bold underline">{productToDelete?.nom}</span> ?<br/>
+                        <span className="text-red-600 text-sm font-bold">Cette action est irréversible.</span>
+                    </p>
+                    <div className="flex gap-4">
+                        <button 
+                            onClick={() => setProductToDelete(null)} 
+                            disabled={isDeleting}
+                            className="flex-1 py-3 border border-zinc-950 hover:bg-zinc-200 font-bold uppercase text-xs transition-colors disabled:opacity-50"
+                        >
+                            Annuler
+                        </button>
+                        <button 
+                            onClick={handleDeleteConfirm} 
+                            disabled={isDeleting}
+                            className="flex-1 py-3 border border-zinc-950 bg-red-600 text-zinc-50 font-bold uppercase text-xs hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {isDeleting ? 'Suppression...' : <><Trash2 size={16} /> Supprimer</>}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
+    );
+}
+
+export default function AdminDashboard() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-zinc-300 text-zinc-950 font-bold uppercase tracking-widest">Chargement du dashboard...</div>}>
+            <DashboardContent />
+        </Suspense>
     );
 }

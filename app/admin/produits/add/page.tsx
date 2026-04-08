@@ -174,6 +174,7 @@ export default function AddProduit() {
                             type="number"
                             step="0.01"
                             placeholder="0.00"
+                            min={0.0}
                             value={prix}
                             onChange={(e) => setPrix(e.target.value)}
                             className="border border-zinc-400 bg-zinc-50 px-4 py-2 outline-none focus:border-zinc-950 transition-colors"

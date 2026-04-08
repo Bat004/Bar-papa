@@ -33,10 +33,25 @@ export async function POST(request: Request) {
 
 export async function GET(){
     try{
+
         const produits = await prisma.produit.findMany({
-            include: {producteur: true},
+            include: {
+                producteur: {
+                include: {
+                    region: {
+                    include: {
+                        pays: {
+                        include: {
+                            continent: true
+                        }
+                        }
+                    }
+                    }
+                }
+                }
+            },
             orderBy: {
-                nom: 'asc'
+                id: 'desc'
             }
         });
 

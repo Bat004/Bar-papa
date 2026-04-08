@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { nom, paysId, nomNouveauPays, continentId } = body;
+        const { nom, paysId, nomNouveauPays, continentId, nomNouveauContinent } = body;
 
         if (!nom) return NextResponse.json({ error: "Nom de région requis" }, { status: 400 });
 
@@ -15,17 +15,18 @@ export async function POST(request: Request) {
                     ? {
                         create: {
                             nom: nomNouveauPays,
-                            continentId: Number(continentId) // Relation obligatoire dans ton modèle
+                            continent: nomNouveauContinent
+                                ? { create: { nom: nomNouveauContinent } } // Crée Nouveau Continent
+                                : { connect: { id: Number(continentId) } } // Connecte Continent existant
                         }
                     }
                     : {
-                        connect: { id: Number(paysId) }
+                        connect: { id: Number(paysId) } // Connecte Pays existant
                     }
             }
         });
 
         return NextResponse.json(nouvelleRegion, { status: 201 });
-
     } catch (error) {
         console.error("Erreur création région :", error);
         return NextResponse.json({ error: "Erreur lors de la création." }, { status: 500 });

@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json(nouvelleRegion, { status: 201 });
     } catch (error) {
-        // ... ta gestion d'erreur ...
+        console.log(error);
         return NextResponse.json({ error: "Erreur" }, { status: 500 });
     }
 }
@@ -29,6 +29,7 @@ export async function GET() {
         });
         return NextResponse.json(regions);
     } catch (error) {
+        console.log(error);
         return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
     }
 }

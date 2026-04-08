@@ -71,6 +71,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
         return NextResponse.json(producteur);
     } catch (error) {
+        console.log(error);
         return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
     }
 }

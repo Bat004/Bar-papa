@@ -1,232 +1,139 @@
 'use client'
 
 import React, { useState, useEffect, use } from 'react';
-// import { useRouter } from 'next/navigation';
 import Link from "next/link";
 import Image from "next/image";
 import toast, { Toaster } from "react-hot-toast";
 
-interface Region {
-    id: number | string;
-    nom: string;
-}
+interface Region { id: number | string; nom: string; }
 
-export default function UpdateProducteur({ params }: { params: Promise<{ id: string }> }){
-    const resolvedParams = use(params); 
-    const id = resolvedParams.id;
-    
+const inputClass = "bg-[#0A120E]/60 border border-[#1B3126] focus:border-[#A3FF90]/50 text-[#E8E3D9] placeholder:text-[#8EA397]/50 px-4 py-3 rounded-lg outline-none text-sm transition-colors w-full";
+const labelClass = "text-xs font-mono uppercase tracking-widest text-[#8EA397]";
+
+export default function UpdateProducteur({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
+
     const [regions, setRegions] = useState<Region[]>([]);
-
-    // États du formulaire
     const [nom, setNom] = useState('');
     const [description, setDescription] = useState('');
     const [regionId, setRegionId] = useState('');
-    
-    // États pour l'image (logo)
     const [currentImage, setCurrentImage] = useState<string | null>(null);
     const [newImageFile, setNewImageFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // 1. Récupération des régions
     useEffect(() => {
-        const fetchRegions = async () => {
-            try {
-                const res = await fetch('/api/admin/regions');
-                if (res.ok) {
-                    const data = await res.json();
-                    setRegions(data);
-                }
-            } catch (err) {
-                console.error("Erreur lors du chargement des régions :", err);
-            }
-        };
-        fetchRegions();
+        fetch('/api/admin/regions')
+            .then(r => r.ok ? r.json() : [])
+            .then(setRegions)
+            .catch(console.error);
     }, []);
-    
-    // 2. Récupération des données du producteur existant
+
     useEffect(() => {
-        const fetchProducteur = async () => {
-            if (!id) return;
-            try {
-                const res = await fetch(`/api/admin/producteurs/${id}`); 
-                if (res.ok) {
-                    const data = await res.json();
-                    setNom(data.nom || ''); 
-                    setDescription(data.description || '');
-                    setRegionId(data.regionId ? String(data.regionId) : '');
-                    if (data.logoUrl) setCurrentImage(data.logoUrl);
-                }
-            } catch (err) {
-                console.error("Erreur lors du chargement :", err);
-            }
-        };
-        fetchProducteur();
+        if (!id) return;
+        fetch(`/api/admin/producteurs/${id}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!data) return;
+                setNom(data.nom || '');
+                setDescription(data.description || '');
+                setRegionId(data.regionId ? String(data.regionId) : '');
+                if (data.logoUrl) setCurrentImage(data.logoUrl);
+            })
+            .catch(console.error);
     }, [id]);
 
-    // 3. Gestion de l'image
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error("L'image est trop volumineuse (max 5MB).");
-                return;
-            }
-            setNewImageFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
-        }
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { toast.error("Image trop volumineuse (max 5MB)."); return; }
+        setNewImageFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
     };
 
-    // 4. Soumission du formulaire (Modification)
     const updateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!nom.trim() || nom.trim().length < 3) { toast.error("Le nom doit contenir au moins 3 caractères."); return; }
+        if (!regionId) { toast.error("Veuillez sélectionner une région."); return; }
         setIsSubmitting(true);
-
-        // Validations côté client
-        if (!nom.trim() || nom.trim().length < 3) {
-            toast.error("Le nom doit contenir au moins 3 caractères.");
-            setIsSubmitting(false);
-            return;
-        }
-
-        if (!regionId) {
-            toast.error("Veuillez sélectionner une région.");
-            setIsSubmitting(false);
-            return;
-        }
-
         try {
-            const formData = new FormData();
-            formData.append('nom', nom.trim());
-            formData.append('description', description.trim());
-            formData.append('regionId', regionId);
-            
-            if (newImageFile) {
-                formData.append('image', newImageFile);
-            }
-
-            const res = await fetch(`/api/admin/producteurs/${id}`, {
-                method: 'PATCH',
-                body: formData
-            });
-
+            const fd = new FormData();
+            fd.append('nom', nom.trim());
+            fd.append('description', description.trim());
+            fd.append('regionId', regionId);
+            if (newImageFile) fd.append('image', newImageFile);
+            const res = await fetch(`/api/admin/producteurs/${id}`, { method: 'PATCH', body: fd });
             if (res.ok) {
-                toast.success("Producteur modifié avec succès !");
-                setTimeout(() => {
-                    // Force la redirection pour activer l'onglet correctement
-                    window.location.href = '/admin/dashboard?tab=producteurs';
-                }, 1500);
+                toast.success("Producteur modifié !");
+                setTimeout(() => { window.location.href = '/admin/dashboard?tab=producteurs'; }, 1500);
             } else {
                 const data = await res.json();
-                toast.error(data.error || "Une erreur est survenue.");
+                toast.error(data.error || "Erreur lors de la modification.");
                 setIsSubmitting(false);
             }
         } catch (error) {
-            console.error("Erreur dans la modification du producteur :", error);
-            toast.error("Erreur de connexion au serveur.");
+            console.error(error);
+            toast.error("Erreur de connexion.");
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-zinc-300 text-zinc-950 items-center p-8 sm:p-12 relative">
-            
-            <Toaster 
-                position="bottom-right" 
-                toastOptions={{
-                    style: {
-                        background: '#09090b', color: '#fafafa', border: '1px solid #09090b',
-                        borderRadius: '0px', textTransform: 'uppercase', fontSize: '12px',
-                        fontWeight: 'bold', padding: '16px'
-                    },
-                    success: { iconTheme: { primary: '#22c55e', secondary: '#09090b' } },
-                    error: { iconTheme: { primary: '#ef4444', secondary: '#09090b' } }
-                }} 
-            />
+        <div className="min-h-screen flex items-start justify-center px-6 py-12">
+            <Toaster position="bottom-right" toastOptions={{ style: { background: 'rgba(11,14,12,0.95)', color: '#E8E3D9', border: '1px solid #1B3126', borderRadius: '8px', fontSize: '12px', fontFamily: 'var(--font-geist-mono)', textTransform: 'uppercase' }, success: { iconTheme: { primary: '#A3FF90', secondary: '#0A120E' } }, error: { iconTheme: { primary: '#ef4444', secondary: '#0A120E' } } }} />
 
-            <div className="w-full max-w-md mt-6">
-                <div className="mb-10 text-center">
-                    <h1 className="text-2xl font-bold uppercase tracking-widest">Modifier ce producteur</h1>
+            <div className="w-full max-w-md animate-hud">
+                <div className="text-center mb-8">
+                    <h1 className="text-2xl font-bold text-[#E8E3D9] tracking-tight">Modifier ce producteur</h1>
                 </div>
 
-                <form onSubmit={updateSubmit} className="flex flex-col gap-6 bg-zinc-200/50 p-6 rounded-lg border border-zinc-400 shadow-sm">
-                    
-                    {/* Image / Logo */}
-                    <div className="flex flex-col gap-2 items-center mb-4">
-                        <label className="text-xs font-bold uppercase tracking-tighter w-full text-left">Logo ou Photo</label>
-                        <div className="w-32 h-32 relative rounded border border-zinc-400 bg-zinc-300 overflow-hidden flex items-center justify-center">
-                            {(previewUrl || currentImage) ? (
-                                <Image src={previewUrl || currentImage || ''} alt="Aperçu" fill className="object-cover" />
-                            ) : (
-                                <span className="text-xs text-zinc-500 text-center px-2">Aucun logo</span>
-                            )}
+                <div className="relative p-8 rounded-xl overflow-hidden" style={{ background: 'rgba(23,38,30,0.55)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(163,255,144,0.4)', boxShadow: '0 0 30px rgba(163,255,144,0.15), inset 0 0 20px rgba(163,255,144,0.05)' }}>
+                    <div className="absolute top-0 left-[10%] w-4/5 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(163,255,144,0.8), transparent)', boxShadow: '0 2px 8px rgba(163,255,144,0.5)' }} />
+
+                    <form onSubmit={updateSubmit} className="flex flex-col gap-5">
+
+                        {/* Image */}
+                        <div className="flex flex-col gap-2 items-center">
+                            <label className={`${labelClass} w-full`}>Logo ou photo</label>
+                            <div className="w-28 h-28 relative rounded-xl border border-[#1B3126] bg-[#0A120E]/60 overflow-hidden flex items-center justify-center">
+                                {(previewUrl || currentImage)
+                                    ? <Image src={previewUrl || currentImage || ''} alt="Aperçu" fill className="object-cover" />
+                                    : <span className="text-[10px] font-mono text-[#8EA397]/50 text-center px-2">Aucun logo</span>
+                                }
+                            </div>
+                            <input type="file" accept="image/*" onChange={handleImageChange} className="text-xs text-[#8EA397] file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-[#1B3126] file:text-xs file:font-mono file:bg-transparent file:text-[#8EA397] hover:file:text-[#A3FF90] hover:file:border-[#A3FF90]/40 file:cursor-pointer mt-1" />
                         </div>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="text-xs text-zinc-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-zinc-950 file:text-white hover:file:bg-zinc-800 file:cursor-pointer mt-2 w-full max-w-[250px]"
-                        />
-                    </div>
 
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-tighter">Nom complet *</label>
-                        <input
-                            type="text"
-                            placeholder="Nom du producteur"
-                            value={nom}
-                            onChange={(e) => setNom(e.target.value)}
-                            className="border border-zinc-950 bg-zinc-100 px-4 py-2 outline-none focus:bg-white transition-colors placeholder:text-zinc-400"
-                            required
-                        />
-                    </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className={labelClass}>Nom complet *</label>
+                            <input type="text" placeholder="Nom du producteur" value={nom} onChange={e => setNom(e.target.value)} className={inputClass} required />
+                        </div>
 
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-tighter">Région *</label>
-                        <select
-                            value={regionId}
-                            onChange={(e) => setRegionId(e.target.value)}
-                            className="border border-zinc-950 bg-zinc-100 px-4 py-2 outline-none focus:bg-white transition-colors text-zinc-950 appearance-none"
-                            required
-                        >
-                            <option value="">Sélectionnez une région</option>
-                            {regions.map((r) => (
-                                <option key={r.id} value={r.id}>
-                                    {r.nom}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className={labelClass}>Région *</label>
+                            <select value={regionId} onChange={e => setRegionId(e.target.value)} className={`${inputClass} appearance-none`} required>
+                                <option value="">— Sélectionner une région —</option>
+                                {regions.map(r => <option key={r.id} value={r.id}>{r.nom}</option>)}
+                            </select>
+                        </div>
 
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-tighter">Description</label>
-                        <textarea
-                            placeholder="Histoire, méthodes de production..."
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            className="border border-zinc-950 bg-zinc-100 px-4 py-2 outline-none focus:bg-white transition-colors placeholder:text-zinc-400 min-h-[100px] resize-none"
-                        />
-                    </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className={labelClass}>Description</label>
+                            <textarea placeholder="Histoire, méthodes de production..." value={description} onChange={e => setDescription(e.target.value)} className={`${inputClass} min-h-[90px] resize-none`} />
+                        </div>
 
-                    <button 
-                        type="submit" 
-                        disabled={isSubmitting}
-                        className="bg-zinc-950 text-zinc-50 py-3 font-medium hover:bg-zinc-800 transition-all uppercase tracking-widest text-sm mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isSubmitting ? 'Enregistrement...' : 'Modifier le producteur'}
-                    </button>
-                </form>
+                        <button type="submit" disabled={isSubmitting} className="btn-glass w-full py-3 rounded-lg flex justify-center items-center gap-2 font-mono text-sm uppercase tracking-widest mt-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {isSubmitting ? 'Enregistrement...' : 'Modifier le producteur'}
+                        </button>
+                    </form>
+                </div>
 
-                <div className="mt-8 text-center">
-                    <Link 
-                        href="/admin/dashboard?tab=producteurs" 
-                        className="text-xs text-zinc-600 hover:text-zinc-950 underline underline-offset-4 transition-colors"
-                    >
+                <div className="mt-6 text-center">
+                    <Link href="/admin/dashboard?tab=producteurs" className="text-xs font-mono text-[#8EA397] hover:text-[#A3FF90] transition-colors underline underline-offset-4">
                         Annuler et revenir
                     </Link>
                 </div>
             </div>
         </div>
-    )
+    );
 }

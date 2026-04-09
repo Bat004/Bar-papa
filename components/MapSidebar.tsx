@@ -15,6 +15,14 @@ type MapSidebarProps = {
     handleCountryClick: (slug: string) => void;
 };
 
+const CONTINENT_LABELS: Record<string, string> = {
+    'amerique': 'Amérique',
+    'europe': 'Europe',
+    'asie': 'Asie',
+    'afrique': 'Afrique',
+    'oceanie': 'Océanie'
+};
+
 export default function MapSidebar({
     currentView, continentActif, hoveredCountry, paysAffiches,
     zoomToContinent, zoomOutToWorld, setHoveredCountry, handleCountryClick
@@ -40,23 +48,22 @@ export default function MapSidebar({
                             Destinations
                         </h2>
                         <div className="flex flex-col gap-4">
-                            <button onClick={() => zoomToContinent('am-sud')} className="btn-glass w-full text-left px-5 py-4">
-                                <span className={`${outfit.className} text-base tracking-wide`}>Amérique du Sud</span>
-                            </button>
-                            <button onClick={() => zoomToContinent('europe')} className="btn-glass w-full text-left px-5 py-4">
-                                <span className={`${outfit.className} text-base tracking-wide`}>Europe</span>
-                            </button>
+                            {Object.entries(CONTINENT_LABELS).map(([key, label]) => (
+                                <button key={key} onClick={() => zoomToContinent(key)} className="btn-glass w-full px-5 py-4">
+                                    <span className={`${outfit.className} text-base tracking-wide`}>{label}</span>
+                                </button>
+                            ))}
                         </div>
                     </div>
                 ) : (
                     <div className="animate-in fade-in slide-in-from-right-8 duration-700">
-                        <button onClick={zoomOutToWorld} className="text-xs font-light text-[#8EA397] hover:text-[#D97736] mb-8 transition-all flex items-center gap-2 group tracking-wide">
+                        <button onClick={zoomOutToWorld} className="text-xs font-light text-[#8EA397] hover:text-[#D97736] mb-8 transition-all flex items-center gap-2 group tracking-wide drop-shadow-[0_0_8px_rgba(217,119,54,0)] hover:drop-shadow-[0_0_8px_currentColor]">
                             <span className="transform group-hover:-translate-x-1 transition-transform">←</span> 
                             Retour au monde
                         </button>
                         
-                        <h2 className={`text-xl font-normal uppercase tracking-widest mb-8 ${outfit.className} text-white/90`}>
-                            {continentActif === 'am-sud' ? 'Amérique du Sud' : 'Europe'}
+                        <h2 className={`text-xl font-normal uppercase tracking-widest mb-8 ${outfit.className} text-[#D97736] drop-shadow-[0_0_8px_rgba(217,119,54,0.4)]`}>
+                            {CONTINENT_LABELS[continentActif] || continentActif}
                         </h2>
                         
                         <div className="flex flex-col gap-4 mt-8">
@@ -65,12 +72,12 @@ export default function MapSidebar({
                                 return (
                                     <button 
                                         key={pays.slug}
-                                        className={`btn-glass w-full text-left px-5 py-3.5 text-sm tracking-wide border border-white/10 rounded-md hover:translate-x-1 transition-transform ${isActive ? 'active' : ''}`}
+                                        className={`btn-glass w-full px-5 py-3.5 text-sm tracking-wide ${isActive ? 'active' : ''}`}
                                         onMouseEnter={() => setHoveredCountry(pays.map_name)}
                                         onMouseLeave={() => setHoveredCountry(null)}
                                         onClick={() => handleCountryClick(pays.slug)}
                                     >
-                                        {pays.nom}
+                                        <span className={outfit.className}>{pays.nom}</span>
                                     </button>
                                 );
                             })}

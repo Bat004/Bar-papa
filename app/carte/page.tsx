@@ -10,17 +10,25 @@ const outfit = Outfit({ subsets: ['latin'], display: 'swap', weight: ['300', '40
 const inter = Inter({ subsets: ['latin'], display: 'swap', weight: ['300', '400'] });
 
 const PAYS_BDD = [
+    // Amérique du Sud
     { slug: 'bresil', nom: 'Brésil', continent: 'am-sud', map_name: 'Brazil', stats: { prods: 42, producteurs: 8, top: 'Cachaça' } },
     { slug: 'perou', nom: 'Pérou', continent: 'am-sud', map_name: 'Peru', stats: { prods: 15, producteurs: 3, top: 'Pisco' } },
     { slug: 'colombie', nom: 'Colombie', continent: 'am-sud', map_name: 'Colombia', stats: { prods: 24, producteurs: 5, top: 'Rhum' } },
+    
+    // Europe (Nouveaux pays !)
+    { slug: 'france', nom: 'France', continent: 'europe', map_name: 'France', stats: { prods: 120, producteurs: 45, top: 'Vin' } },
+    { slug: 'italie', nom: 'Italie', continent: 'europe', map_name: 'Italy', stats: { prods: 85, producteurs: 30, top: 'Grappa' } },
 ];
-
 
 const PAYS_MAP_NAMES = PAYS_BDD.map(p => p.map_name);
 
 const CONTINENTS_CONFIG = {
     'am-sud': {
         center: [-60, -15] as [number, number],
+        zoom: 3,
+    },
+    'europe': {
+        center: [10, 48] as [number, number], // Centre sur l'Europe
         zoom: 3,
     }
 };
@@ -30,6 +38,8 @@ export default function InteractiveMap() {
     const [currentView, setCurrentView] = useState<'globe' | 'continent'>('globe');
     const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
     const [hoverInfo, setHoverInfo] = useState<{ country: typeof PAYS_BDD[0], x: number, y: number } | null>(null);
+    // Par défaut, on peut dire qu'on est sur la vue globale ou sur l'Amérique du Sud
+    const [continentActif, setContinentActif] = useState<string>('am-sud');
     
     const mapStyle = `https://api.maptiler.com/maps/019d6d30-63ca-7574-95bd-599546a4fd9b/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`;
 
@@ -45,6 +55,8 @@ export default function InteractiveMap() {
         if (!mapRef.current) return;
         const config = CONTINENTS_CONFIG[continentKey];
         const map = mapRef.current.getMap();
+
+        setContinentActif(continentKey);
 
         map.flyTo({ center: config.center, zoom: config.zoom, duration: 2500, essential: true });
         map.once('moveend', () => {
@@ -92,10 +104,47 @@ export default function InteractiveMap() {
         setHoverInfo(null);
     }, []);
 
+    const onMapMove = useCallback(() => {
+        // On ne surveille les mouvements que si on est en mode "continent" (navigable)
+        if (currentView !== 'continent' || !mapRef.current) return;
+        
+        const map = mapRef.current.getMap();
+        
+        // On calcule les coordonnées (X, Y) du centre exact de la carte à l'écran
+        const width = map.getCanvas().clientWidth;
+        const height = map.getCanvas().clientHeight;
+        const centerPoint: [number, number] = [width / 2, height / 2];
+
+        // On "plante une aiguille" virtuelle au centre pour voir quel pays on touche
+        const features = map.queryRenderedFeatures(centerPoint, {
+            layers: ['pays-interactifs'] // On utilise ta couche de détection
+        });
+
+        // Si on survole un pays au centre de l'écran
+        if (features && features.length > 0) {
+            const mapName = features[0].properties?.name;
+            const countryData = PAYS_BDD.find(p => p.map_name === mapName);
+            
+            // Si ce pays appartient à un continent différent, on met à jour !
+            if (countryData) {
+                setContinentActif((continentPrecedent) => {
+                    if (continentPrecedent !== countryData.continent) {
+                        return countryData.continent; // Met à jour la sidebar
+                    }
+                    return continentPrecedent; // Ne fait rien si on est sur le même continent
+                });
+            }
+        }
+        // Note : Si on est sur l'océan (aucun pays au centre), ça garde le dernier continent actif. Parfait pour ne pas faire "clignoter" l'interface.
+    }, [currentView]);
+
     const onMouseLeave = useCallback(() => {
         setHoveredCountry(null);
         setHoverInfo(null);
     }, []);
+
+    // Dès que continentActif change, cette liste se met à jour automatiquement
+    const paysAffiches = PAYS_BDD.filter(pays => pays.continent === continentActif);
 
     return (
         <div className={`flex w-full h-screen text-[#E8E3D9] overflow-hidden ${inter.className}`}>
@@ -121,12 +170,24 @@ export default function InteractiveMap() {
                             <h2 className={`text-xs font-normal uppercase tracking-[0.2em] opacity-50 mb-6 text-[#8EA397] ${outfit.className}`}>
                                 Destinations
                             </h2>
-                            <button 
-                                onClick={() => zoomToContinent('am-sud')}
-                                className="btn-glass w-full text-left px-5 py-4"
-                            >
-                                <span className={`${outfit.className} text-base tracking-wide`}>Amérique du Sud</span>
-                            </button>
+                            
+                            <div className="flex flex-col gap-4">
+                                {/* Bouton Amérique du Sud */}
+                                <button 
+                                    onClick={() => zoomToContinent('am-sud')}
+                                    className="btn-glass w-full text-left px-5 py-4"
+                                >
+                                    <span className={`${outfit.className} text-base tracking-wide`}>Amérique du Sud</span>
+                                </button>
+
+                                {/* NOUVEAU : Bouton Europe */}
+                                <button 
+                                    onClick={() => zoomToContinent('europe')}
+                                    className="btn-glass w-full text-left px-5 py-4"
+                                >
+                                    <span className={`${outfit.className} text-base tracking-wide`}>Europe</span>
+                                </button>
+                            </div>
                         </div>
                     ) : (
                         <div className="animate-in fade-in slide-in-from-right-8 duration-700">
@@ -138,24 +199,24 @@ export default function InteractiveMap() {
                                 Retour au monde
                             </button>
                             
+                            {/* 👉 Titre Dynamique au lieu d'être codé en dur */}
                             <h2 className={`text-xl font-normal uppercase tracking-widest mb-8 ${outfit.className} text-white/90`}>
-                                Amérique du Sud
+                                {continentActif === 'am-sud' ? 'Amérique du Sud' : 'Europe'}
                             </h2>
                             
-                            <div className="flex flex-col gap-4">
-                                {PAYS_BDD.map(pays => {
+                            <div className="flex flex-col gap-4 mt-8">
+                                {paysAffiches.map((pays) => {
                                     const isActive = hoveredCountry === pays.map_name;
-                                    
                                     return (
                                         <button 
-                                            key={pays.slug} 
-                                            className={`btn-glass w-full text-left px-5 py-3.5 text-sm tracking-wide ${isActive ? 'active' : ''}`}
+                                            key={pays.slug}
+                                            className={`btn-glass w-full text-left px-5 py-3.5 text-sm tracking-wide border border-white/10 rounded-md hover:translate-x-1 transition-transform ${isActive ? 'active' : ''}`}
                                             onMouseEnter={() => setHoveredCountry(pays.map_name)}
                                             onMouseLeave={() => setHoveredCountry(null)}
                                         >
                                             {pays.nom}
                                         </button>
-                                    )
+                                    );
                                 })}
                             </div>
                         </div>
@@ -189,6 +250,7 @@ export default function InteractiveMap() {
                         doubleClickZoom={false}
                         onLoad={handleMapLoad}
                         onZoom={handleZoom}
+                        onMove={onMapMove}
                         interactiveLayerIds={['pays-interactifs']}
                         onMouseMove={onMouseMove}
                         onMouseLeave={onMouseLeave}

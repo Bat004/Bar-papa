@@ -1,141 +1,198 @@
 'use client'
 
 import React, { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import Link from "next/link";
+import Image from "next/image";
+import toast, { Toaster } from "react-hot-toast";
 
 interface Region {
-    id: string;
-    nom: string
+    id: number | string;
+    nom: string;
 }
 
 export default function UpdateProducteur({ params }: { params: Promise<{ id: string }> }){
-    const [regions, setRegions] = useState<Region[]>([]);
-
     const resolvedParams = use(params); 
     const id = resolvedParams.id;
     
-    const [fullName, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [region, setRegion] = useState('');
-    const [error, setError] = useState(false);
-    const router = useRouter();
+    const [regions, setRegions] = useState<Region[]>([]);
 
+    // États du formulaire
+    const [nom, setNom] = useState('');
+    const [description, setDescription] = useState('');
+    const [regionId, setRegionId] = useState('');
+    
+    // États pour l'image (logo)
+    const [currentImage, setCurrentImage] = useState<string | null>(null);
+    const [newImageFile, setNewImageFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // 1. Récupération des régions
     useEffect(() => {
         const fetchRegions = async () => {
-            const res = await fetch('/api/admin/regions');
-            if(res.ok){
-                const data = await res.json();
-                setRegions(data);
+            try {
+                const res = await fetch('/api/admin/regions');
+                if (res.ok) {
+                    const data = await res.json();
+                    setRegions(data);
+                }
+            } catch (err) {
+                console.error("Erreur lors du chargement des régions :", err);
             }
         };
         fetchRegions();
     }, []);
     
+    // 2. Récupération des données du producteur existant
     useEffect(() => {
-    const fetchProducteur = async () => {
-        if (!id) return;
-        try {
-            const res = await fetch(`/api/admin/producteurs/${id}`); 
-            
-            if (res.ok) {
-                const data = await res.json();
-                setName(data.nom || ''); 
-                setDescription(data.description || '');
-                setRegion(data.region?.nom || '');
+        const fetchProducteur = async () => {
+            if (!id) return;
+            try {
+                const res = await fetch(`/api/admin/producteurs/${id}`); 
+                if (res.ok) {
+                    const data = await res.json();
+                    setNom(data.nom || ''); 
+                    setDescription(data.description || '');
+                    setRegionId(data.regionId ? String(data.regionId) : '');
+                    if (data.logoUrl) setCurrentImage(data.logoUrl);
+                }
+            } catch (err) {
+                console.error("Erreur lors du chargement :", err);
             }
-        } catch (err) {
-            console.error("Erreur lors du chargement :", err);
+        };
+        fetchProducteur();
+    }, [id]);
+
+    // 3. Gestion de l'image
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error("L'image est trop volumineuse (max 5MB).");
+                return;
+            }
+            setNewImageFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
         }
     };
-    fetchProducteur();
-}, [id]);
 
+    // 4. Soumission du formulaire (Modification)
     const updateSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError(false);
+        setIsSubmitting(true);
 
-        try{
+        // Validations côté client
+        if (!nom.trim() || nom.trim().length < 3) {
+            toast.error("Le nom doit contenir au moins 3 caractères.");
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (!regionId) {
+            toast.error("Veuillez sélectionner une région.");
+            setIsSubmitting(false);
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('nom', nom.trim());
+            formData.append('description', description.trim());
+            formData.append('regionId', regionId);
+            
+            if (newImageFile) {
+                formData.append('image', newImageFile);
+            }
+
             const res = await fetch(`/api/admin/producteurs/${id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({nom : fullName, description, regionId :  region})
+                body: formData
             });
 
-            if(res.ok){
-                router.push('/admin/dashboard')
-                router.refresh();
-                //pop up de confirmation
-            }else{
-                setError(true);
+            if (res.ok) {
+                toast.success("Producteur modifié avec succès !");
+                setTimeout(() => {
+                    // Force la redirection pour activer l'onglet correctement
+                    window.location.href = '/admin/dashboard?tab=producteurs';
+                }, 1500);
+            } else {
+                const data = await res.json();
+                toast.error(data.error || "Une erreur est survenue.");
+                setIsSubmitting(false);
             }
-        }catch(error){
-            console.error("Erreur dans la modification du producteur : ", error);
-            setError(true);
+        } catch (error) {
+            console.error("Erreur dans la modification du producteur :", error);
+            toast.error("Erreur de connexion au serveur.");
+            setIsSubmitting(false);
         }
     };
 
-    const deletionSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(false);
-
-        try{
-            const res = await fetch(`/api/admin/producteurs/${id}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            if(res.ok){
-                router.push('/admin/dashboard')
-                router.refresh();
-                //pop up de confirmation
-            }else{
-                setError(true);
-            }
-        }catch(error){
-            console.error("Erreur dans la supression du producteur : ", error);
-            setError(true);
-        }
-    }
-
     return (
-        <div className="flex flex-col min-h-screen bg-zinc-300 text-zinc-950 items-center p-8 sm:p-12">
+        <div className="flex flex-col min-h-screen bg-zinc-300 text-zinc-950 items-center p-8 sm:p-12 relative">
+            
+            <Toaster 
+                position="bottom-right" 
+                toastOptions={{
+                    style: {
+                        background: '#09090b', color: '#fafafa', border: '1px solid #09090b',
+                        borderRadius: '0px', textTransform: 'uppercase', fontSize: '12px',
+                        fontWeight: 'bold', padding: '16px'
+                    },
+                    success: { iconTheme: { primary: '#22c55e', secondary: '#09090b' } },
+                    error: { iconTheme: { primary: '#ef4444', secondary: '#09090b' } }
+                }} 
+            />
 
-            <div className="w-full max-w-md">
+            <div className="w-full max-w-md mt-6">
                 <div className="mb-10 text-center">
                     <h1 className="text-2xl font-bold uppercase tracking-widest">Modifier ce producteur</h1>
                 </div>
 
-                <form onSubmit={updateSubmit} className="flex flex-col gap-6">
-                    {error && (
-                        <p className="text-red-600 text-xs text-center font-medium bg-red-100 py-2 rounded">
-                            Une erreur est survenue lors de la modification.
-                        </p>
-                    )}
+                <form onSubmit={updateSubmit} className="flex flex-col gap-6 bg-zinc-200/50 p-6 rounded-lg border border-zinc-400 shadow-sm">
+                    
+                    {/* Image / Logo */}
+                    <div className="flex flex-col gap-2 items-center mb-4">
+                        <label className="text-xs font-bold uppercase tracking-tighter w-full text-left">Logo ou Photo</label>
+                        <div className="w-32 h-32 relative rounded border border-zinc-400 bg-zinc-300 overflow-hidden flex items-center justify-center">
+                            {(previewUrl || currentImage) ? (
+                                <Image src={previewUrl || currentImage || ''} alt="Aperçu" fill className="object-cover" />
+                            ) : (
+                                <span className="text-xs text-zinc-500 text-center px-2">Aucun logo</span>
+                            )}
+                        </div>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="text-xs text-zinc-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-zinc-950 file:text-white hover:file:bg-zinc-800 file:cursor-pointer mt-2 w-full max-w-[250px]"
+                        />
+                    </div>
 
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-tighter">Nom complet</label>
+                        <label className="text-xs font-bold uppercase tracking-tighter">Nom complet *</label>
                         <input
                             type="text"
-                            placeholder="entrez un nom"
-                            value={fullName}
-                            onChange={(e) => setName(e.target.value)}
-                            className="border border-zinc-950 bg-transparent px-4 py-2 outline-none focus:bg-zinc-200 transition-colors placeholder:text-zinc-500"
+                            placeholder="Nom du producteur"
+                            value={nom}
+                            onChange={(e) => setNom(e.target.value)}
+                            className="border border-zinc-950 bg-zinc-100 px-4 py-2 outline-none focus:bg-white transition-colors placeholder:text-zinc-400"
                             required
                         />
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-tighter">Producteur</label>
+                        <label className="text-xs font-bold uppercase tracking-tighter">Région *</label>
                         <select
-                            value={region}
-                            onChange={(e) => setRegion(e.target.value)}
-                            className="border border-zinc-950 bg-transparent px-4 py-2 outline-none focus:bg-zinc-200 transition-colors text-zinc-950 appearance-none"
+                            value={regionId}
+                            onChange={(e) => setRegionId(e.target.value)}
+                            className="border border-zinc-950 bg-zinc-100 px-4 py-2 outline-none focus:bg-white transition-colors text-zinc-950 appearance-none"
                             required
                         >
                             <option value="">Sélectionnez une région</option>
                             {regions.map((r) => (
-                                <option key={r.nom} value={r.nom}>
+                                <option key={r.id} value={r.id}>
                                     {r.nom}
                                 </option>
                             ))}
@@ -143,42 +200,32 @@ export default function UpdateProducteur({ params }: { params: Promise<{ id: str
                     </div>
 
                     <div className="flex flex-col gap-2">
-                        <label className="text-xs font-bold uppercase tracking-tighter">Description (optionnelle)</label>
+                        <label className="text-xs font-bold uppercase tracking-tighter">Description</label>
                         <textarea
-                            placeholder="entrez une description"
+                            placeholder="Histoire, méthodes de production..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="border border-zinc-950 bg-transparent px-4 py-2 outline-none focus:bg-zinc-200 transition-colors placeholder:text-zinc-500 min-h-[100px] resize-none"
+                            className="border border-zinc-950 bg-zinc-100 px-4 py-2 outline-none focus:bg-white transition-colors placeholder:text-zinc-400 min-h-[100px] resize-none"
                         />
                     </div>
 
-                    <div className="flex flex-col gap-3 mt-4">
-                        <button 
-                            type="submit" 
-                            className="bg-zinc-950 text-zinc-50 py-3 font-medium hover:bg-zinc-800 transition-all uppercase tracking-widest text-sm"
-                        >
-                            Modifier le producteur
-                        </button>
-                    </div>
+                    <button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        className="bg-zinc-950 text-zinc-50 py-3 font-medium hover:bg-zinc-800 transition-all uppercase tracking-widest text-sm mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSubmitting ? 'Enregistrement...' : 'Modifier le producteur'}
+                    </button>
                 </form>
 
-                <form onSubmit={deletionSubmit} className="flex flex-col gap-6">
-                    <div className="flex flex-col gap-3 mt-4">
-                        <button
-                            type="submit"
-                            className="bg-red-700 text-white py-3 font-medium hover:bg-red-800 transition-all uppercase tracking-widest text-sm shadow-sm"
-                        >
-                            Supprimer le producteur
-                        </button>
-                    </div>
-                </form>
-
-                <Link 
-                    href="/admin/dashboard" 
-                    className="text-center text-xs text-zinc-600 hover:text-zinc-950 underline underline-offset-4 transition-colors"
-                >
-                    Revenir au dashboard
-                </Link>
+                <div className="mt-8 text-center">
+                    <Link 
+                        href="/admin/dashboard?tab=producteurs" 
+                        className="text-xs text-zinc-600 hover:text-zinc-950 underline underline-offset-4 transition-colors"
+                    >
+                        Annuler et revenir
+                    </Link>
+                </div>
             </div>
         </div>
     )

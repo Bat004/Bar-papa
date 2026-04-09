@@ -1,0 +1,118 @@
+/* produits.css */
+
+/* =========================================
+   UI EXTENSIONS - PRODS & FILTERS
+   ========================================= */
+
+/* --- Cartes Produits Glassmorphism --- */
+.product-card-glass {
+  background: rgba(255, 255, 255, 0.01);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(163, 255, 144, 0.08); /* Ligne verte très fine */
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: inset 0 0 15px rgba(163, 255, 144, 0.02);
+}
+
+.product-card-glass:hover {
+  border-color: rgba(217, 119, 54, 0.5); /* Passe cuivre */
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    inset 0 0 20px rgba(217, 119, 54, 0.1);
+}
+
+/* --- Fine barre de séparation NÉON VERT --- */
+.neon-separator-vert {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #A3FF90, transparent);
+  box-shadow: 0 0 10px rgba(163, 255, 144, 0.8);
+  border: none;
+  opacity: 0.6;
+}
+
+/* --- Tiroir de Filtres (Glass Panel Right) --- */
+.filters-drawer {
+  background: rgba(10, 18, 14, 0.9); /* Plus sombre pour lisibilité */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(163, 255, 144, 0.3); /* Ligne verte fine */
+  box-shadow: 
+    -5px 0 25px rgba(163, 255, 144, 0.1),
+    -15px 0 50px rgba(0, 0, 0, 0.9);
+}
+
+/* --- Animation Accordéon pour sections filtres --- */
+.filter-section-content {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  opacity: 0;
+}
+
+.filter-section-content.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 15px; /* Espace quand ouvert */
+}
+
+/* Sécurité pour le contenu interne de l'accordéon */
+.filter-section-inner {
+  overflow: hidden;
+}
+
+/* --- Icônes HUD Cuivre --- */
+.hud-icon-cuivre {
+  color: #D97736;
+  filter: drop-shadow(0 0 4px rgba(217, 119, 54, 0.6));
+}
+
+/* --- Checkboxes Custom NÉON VERT --- */
+.custom-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(163, 255, 144, 0.5);
+  border-radius: 4px;
+  background: rgba(163, 255, 144, 0.03);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.custom-checkbox:checked {
+  background: rgba(163, 255, 144, 0.2);
+  border-color: #A3FF90;
+  box-shadow: 0 0 10px rgba(163, 255, 144, 0.5);
+}
+
+.custom-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #A3FF90;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 0 0 5px #A3FF90;
+}
+
+/* --- Airbnb Slider Styles Customisés DA --- */
+.airbnb-slider::-webkit-slider-thumb {
+  background: #0A120E; /* Fond sombre */
+  border: 2px solid #A3FF90 !important; /* Bord Néon Vert */
+  box-shadow: 0 0 10px rgba(163, 255, 144, 0.7) !important;
+}
+
+.airbnb-slider::-moz-range-thumb {
+  background: #0A120E;
+  border: 2px solid #A3FF90 !important;
+  box-shadow: 0 0 10px rgba(163, 255, 144, 0.7) !important;
+}
+
+/* Barre de progression du slider (verte) */
+.slider-track-active {
+  background: #A3FF90 !important;
+  box-shadow: 0 0 10px rgba(163, 255, 144, 0.5);
+}

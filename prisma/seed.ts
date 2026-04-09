@@ -1,4 +1,20 @@
-import { prisma } from '@/lib/prisma'; // ✔️ Le bon import !
+import { prisma } from '@/lib/prisma';
+import { faker } from '@faker-js/faker';
+
+
+// Configuration de la masse de données à générer
+const CONFIG = {
+    PAYS_MAJEURS_PAR_CONTINENT: 5,
+    REGIONS_PAR_PAYS: 5,
+    PRODUCTEURS_PAR_REGION: 10,
+    PRODUITS_PAR_PRODUCTEUR: 10,
+};
+
+// Types de spiritueux pour varier (pas de vin)
+const TYPES_SPIRITUEUX = ['Rhum Blanc', 'Rhum Vieux', 'Whisky Single Malt', 'Bourbon', 'Gin', 'Vodka', 'Tequila Blanco', 'Tequila Reposado', 'Mezcal', 'Cognac VSOP', 'Cognac XO', 'Armagnac', 'Calvados', 'Liqueur', 'Cachaça'];
+
+// Adjectifs pour générer des noms de produits réalistes
+const ADJECTIFS = ['Premium', 'Réserve Spéciale', 'Cask Strength', 'Brut de Fût', 'Vintage', 'Héritage', 'XO', 'VSOP', 'Artisanal', 'Double Maturation'];
 
 async function main() {
     console.log('🧹 Nettoyage de la base de données...');
@@ -7,274 +23,125 @@ async function main() {
     await prisma.region.deleteMany();
     await prisma.pays.deleteMany();
     await prisma.continent.deleteMany();
-    await prisma.admin.deleteMany();
 
-    console.log('👤 Création de l\'administrateur...');
-    await prisma.admin.create({
-        data: { username: 'admin', password: 'admin123' },
-    });
+    console.log('🌍 Création des Continents...');
+    const continentsData = ['Europe', 'Amérique', 'Asie', 'Afrique', 'Océanie'];
+    const continents = [];
+    for (const nom of continentsData) {
+        const c = await prisma.continent.create({ data: { nom } });
+        continents.push(c);
+    }
 
-    console.log('🌍 Création du catalogue ultra-massif...');
+    // =====================================================================================
+    // 1. DONNÉES RÉELLES : FRANCE (CLIENT LE BAR À PAPA)
+    // =====================================================================================
+    console.log('🇫🇷 Injection des données réelles du client (Le Bar à Papa - France)...');
+    const continentEurope = continents.find(c => c.nom === 'Europe');
+    const france = await prisma.pays.create({ data: { nom: 'France', continentId: continentEurope!.id } });
 
-    // --- EUROPE ---
-    await prisma.continent.create({
-        data: {
-            nom: 'Europe',
-            pays: {
-                create: [
-                    {
-                        nom: 'France',
-                        regions: {
-                            create: [
-                                {
-                                    nom: 'Bourgogne',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'Domaine de la Romanée-Conti', description: 'Le graal absolu.', logoUrl: 'https://images.unsplash.com/photo-1560512823-829485b8bf24?q=80&w=200',
-                                                produits: { create: [
-                                                    { nom: 'La Tâche Grand Cru 2018', type: 'Vin Rouge', prix: 4500.00, imageUrl: 'https://images.unsplash.com/photo-1586370434639-0fe43b2d32e6?q=80&w=400' },
-                                                    { nom: 'Romanée-Conti Grand Cru', type: 'Vin Rouge', prix: 18000.00, imageUrl: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?q=80&w=400' }
-                                                ]}
-                                            },
-                                            {
-                                                nom: 'Domaine Leflaive', description: 'Pape du Chardonnay.', logoUrl: 'https://images.unsplash.com/photo-1559564104-1b77cbdfd1ff?q=80&w=200',
-                                                produits: { create: [
-                                                    { nom: 'Montrachet Grand Cru', type: 'Vin Blanc', prix: 850.00, imageUrl: 'https://images.unsplash.com/photo-1569914104212-07ebf4ec6829?q=80&w=400' },
-                                                    { nom: 'Puligny-Montrachet 1er Cru', type: 'Vin Blanc', prix: 180.00, imageUrl: 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=400' }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
-                                    nom: 'Bordeaux',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'Château Mouton Rothschild', description: 'Premier Grand Cru Classé.', logoUrl: 'https://images.unsplash.com/photo-1590374585235-a6e5b40cf613?q=80&w=200',
-                                                produits: { create: [
-                                                    { nom: 'Mouton Rothschild 2010', type: 'Vin Rouge', prix: 950.00, imageUrl: 'https://images.unsplash.com/photo-1586370434639-0fe43b2d32e6?q=80&w=400' }
-                                                ]}
-                                            },
-                                            {
-                                                nom: 'Château d\'Yquem', description: 'Le roi des liquoreux.',
-                                                produits: { create: [
-                                                    { nom: 'Yquem 2015', type: 'Vin Blanc Liquoreux', prix: 420.00, imageUrl: 'https://images.unsplash.com/photo-1605380585641-768153027b5e?q=80&w=400' }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
-                                    nom: 'Champagne',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'Krug', description: 'L\'excellence du champagne.',
-                                                produits: { create: [
-                                                    { nom: 'Krug Grande Cuvée', type: 'Champagne', prix: 250.00, imageUrl: 'https://images.unsplash.com/photo-1584916201218-f4242ceb4809?q=80&w=400' },
-                                                    { nom: 'Krug Clos du Mesnil', type: 'Champagne', prix: 1200.00, imageUrl: 'https://images.unsplash.com/photo-1569914104212-07ebf4ec6829?q=80&w=400' }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        nom: 'Écosse (Royaume-Uni)',
-                        regions: {
-                            create: [
-                                {
-                                    nom: 'Islay',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'Lagavulin', description: 'Tourbe riche et profonde.', logoUrl: 'https://images.unsplash.com/photo-1614316138980-874db1dbd4a1?q=80&w=200',
-                                                produits: { create: [
-                                                    { nom: 'Lagavulin 16 ans', type: 'Whisky', prix: 89.90, imageUrl: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?q=80&w=400' },
-                                                    { nom: 'Lagavulin Distillers Edition', type: 'Whisky', prix: 115.00, imageUrl: 'https://images.unsplash.com/photo-1563223771-5fe4038fbfc9?q=80&w=400' }
-                                                ]}
-                                            },
-                                            {
-                                                nom: 'Laphroaig', description: 'Médicinal et tourbé.',
-                                                produits: { create: [
-                                                    { nom: 'Laphroaig 10 ans', type: 'Whisky', prix: 55.00, imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=400' }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
-                                    nom: 'Speyside',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'The Macallan', description: 'Maîtres des fûts de Xérès.',
-                                                produits: { create: [
-                                                    { nom: 'Macallan 18 ans Sherry Oak', type: 'Whisky', prix: 450.00, imageUrl: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?q=80&w=400' },
-                                                    { nom: 'Macallan 12 ans Double Cask', type: 'Whisky', prix: 85.00, imageUrl: 'https://images.unsplash.com/photo-1563223771-5fe4038fbfc9?q=80&w=400' }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        nom: 'Italie',
-                        regions: {
-                            create: [
-                                {
-                                    nom: 'Toscane',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'Tenuta San Guido', description: 'Créateur du Sassicaia.',
-                                                produits: { create: [
-                                                    { nom: 'Sassicaia 2018', type: 'Vin Rouge', prix: 320.00, imageUrl: 'https://images.unsplash.com/photo-1586370434639-0fe43b2d32e6?q=80&w=400' }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
+    const regionsFrance = [
+        { nom: 'Martinique', producteurs: ['Rhum J.M', 'Neisson', 'Clément', 'HSE', 'La Favorite'] },
+        { nom: 'Guadeloupe', producteurs: ['Damoiseau', 'Bologne', 'Longueteau', 'Bielle', 'Montebello'] },
+        { nom: 'Charente', producteurs: ['Hennessy', 'Rémy Martin', 'Martell', 'Courvoisier', 'Camus'] },
+        { nom: 'Normandie', producteurs: ['Christian Drouin', 'Boulard', 'Père Magloire', 'Château du Breuil'] },
+        { nom: 'Gascogne', producteurs: ['Tariquet', 'Dartigalongue', 'Delord', 'Laballe'] },
+    ];
+
+    for (const reg of regionsFrance) {
+        const region = await prisma.region.create({ data: { nom: reg.nom, paysId: france.id } });
+        
+        for (const prodName of reg.producteurs) {
+            const producteur = await prisma.producteur.create({
+                data: {
+                    nom: prodName,
+                    description: `Distillerie historique de ${reg.nom}, reconnue pour son savoir-faire exceptionnel et ses spiritueux primés dans le monde entier.`,
+                    regionId: region.id,
+                    logoUrl: null, // À remplir via l'admin
+                }
+            });
+
+            // Déterminer le type de spiritueux selon la région
+            let typeBase = 'Rhum';
+            if (reg.nom === 'Charente') typeBase = 'Cognac';
+            if (reg.nom === 'Normandie') typeBase = 'Calvados';
+            if (reg.nom === 'Gascogne') typeBase = 'Armagnac';
+
+            const produitsData = [];
+            for (let i = 0; i < 10; i++) {
+                const typeFinal = typeBase === 'Rhum' ? (i % 2 === 0 ? 'Rhum Vieux Agricole' : 'Rhum Blanc Agricole') : `${typeBase} ${ADJECTIFS[i % ADJECTIFS.length]}`;
+                produitsData.push({
+                    nom: `${prodName} - Cuvée ${faker.word.adjective()}`,
+                    type: typeFinal,
+                    description: `Un ${typeFinal} d'exception, distillé avec passion. Notes de ${faker.food.fruit()} et de ${faker.food.spice()}.`,
+                    prix: parseFloat(faker.commerce.price({ min: 35, max: 250, dec: 2 })),
+                    lienBoutique: 'https://lebarapapa.com/boutique',
+                    producteurId: producteur.id,
+                });
+            }
+            await prisma.produit.createMany({ data: produitsData });
+        }
+    }
+
+    // =====================================================================================
+    // 2. GÉNÉRATION MASSIVE : LE RESTE DU MONDE
+    // =====================================================================================
+    console.log('🌐 Génération massive du reste du monde...');
+
+    // Quelques pays majeurs en spiritueux
+    const paysMajeurs = [
+        { nom: 'Écosse', continent: 'Europe' }, { nom: 'Irlande', continent: 'Europe' }, { nom: 'Italie', continent: 'Europe' },
+        { nom: 'États-Unis', continent: 'Amérique' }, { nom: 'Mexique', continent: 'Amérique' }, { nom: 'Cuba', continent: 'Amérique' }, { nom: 'Pérou', continent: 'Amérique' },
+        { nom: 'Japon', continent: 'Asie' }, { nom: 'Taïwan', continent: 'Asie' }, { nom: 'Inde', continent: 'Asie' },
+        { nom: 'Afrique du Sud', continent: 'Afrique' }, { nom: 'Maurice', continent: 'Afrique' },
+        { nom: 'Australie', continent: 'Océanie' }, { nom: 'Nouvelle-Zélande', continent: 'Océanie' }
+    ];
+
+    for (const paysData of paysMajeurs) {
+        const continentObj = continents.find(c => c.nom === paysData.continent);
+        const pays = await prisma.pays.create({ data: { nom: paysData.nom, continentId: continentObj!.id } });
+
+        // Création des régions pour ce pays
+        for (let r = 0; r < CONFIG.REGIONS_PAR_PAYS; r++) {
+            const region = await prisma.region.create({
+                data: { nom: `${pays.nom} - Région ${faker.location.state()}`, paysId: pays.id }
+            });
+
+            // Création des producteurs pour cette région
+            for (let p = 0; p < CONFIG.PRODUCTEURS_PAR_REGION; p++) {
+                const producteur = await prisma.producteur.create({
+                    data: {
+                        nom: `Distillerie ${faker.company.name()}`,
+                        description: faker.company.catchPhrase(),
+                        regionId: region.id,
                     }
-                ]
+                });
+
+                // Création des produits en Batch (CreateMany est BEAUCOUP plus rapide)
+                const produitsARajoute = [];
+                for (let pr = 0; pr < CONFIG.PRODUITS_PAR_PRODUCTEUR; pr++) {
+                    const typeIndex = Math.floor(Math.random() * TYPES_SPIRITUEUX.length);
+                    const adjIndex = Math.floor(Math.random() * ADJECTIFS.length);
+                    
+                    produitsARajoute.push({
+                        nom: `${TYPES_SPIRITUEUX[typeIndex]} ${ADJECTIFS[adjIndex]} - Lot ${faker.number.int({ min: 1, max: 999 })}`,
+                        type: TYPES_SPIRITUEUX[typeIndex],
+                        description: faker.lorem.paragraph(),
+                        prix: parseFloat(faker.commerce.price({ min: 20, max: 300, dec: 2 })),
+                        producteurId: producteur.id,
+                    });
+                }
+                await prisma.produit.createMany({ data: produitsARajoute });
             }
         }
-    });
+    }
 
-    // --- AMÉRIQUE DU NORD ET CARAÏBES ---
-    await prisma.continent.create({
-        data: {
-            nom: 'Amérique',
-            pays: {
-                create: [
-                    {
-                        nom: 'États-Unis',
-                        regions: {
-                            create: [
-                                {
-                                    nom: 'Californie',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'Opus One Winery', description: 'Légende de la Napa Valley.',
-                                                produits: { create: [
-                                                    { nom: 'Opus One 2018', type: 'Vin Rouge', prix: 380.00, imageUrl: 'https://images.unsplash.com/photo-1586370434639-0fe43b2d32e6?q=80&w=400' }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                },
-                                {
-                                    nom: 'Kentucky',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'Buffalo Trace', description: 'Distillerie historique.',
-                                                produits: { create: [
-                                                    { nom: 'Blanton\'s Original', type: 'Bourbon', prix: 95.00, imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=400' },
-                                                    { nom: 'Eagle Rare 10 ans', type: 'Bourbon', prix: 60.00 }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        nom: 'Mexique',
-                        regions: {
-                            create: [
-                                {
-                                    nom: 'Jalisco',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'Don Julio', description: 'Tequila Premium.',
-                                                produits: { create: [
-                                                    { nom: 'Don Julio 1942', type: 'Tequila', prix: 185.00, imageUrl: 'https://images.unsplash.com/photo-1516588267230-10991c2cecd7?q=80&w=400' },
-                                                    { nom: 'Don Julio Blanco', type: 'Tequila', prix: 55.00, imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=400' }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        nom: 'Martinique (France)',
-                        regions: {
-                            create: [
-                                {
-                                    nom: 'Macouba',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'Rhum J.M', description: 'Rhum agricole AOC.',
-                                                produits: { create: [
-                                                    { nom: 'J.M XO', type: 'Rhum', prix: 65.00, imageUrl: 'https://images.unsplash.com/photo-1614316138980-874db1dbd4a1?q=80&w=400' },
-                                                    { nom: 'J.M Vieux VSOP', type: 'Rhum', prix: 45.00, imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=400' }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        }
-    });
-
-    // --- ASIE ---
-    await prisma.continent.create({
-        data: {
-            nom: 'Asie',
-            pays: {
-                create: [
-                    {
-                        nom: 'Japon',
-                        regions: {
-                            create: [
-                                {
-                                    nom: 'Osaka',
-                                    producteurs: {
-                                        create: [
-                                            {
-                                                nom: 'Suntory', description: 'Pionniers du whisky japonais.',
-                                                produits: { create: [
-                                                    { nom: 'Yamazaki 12 ans', type: 'Whisky', prix: 160.00, imageUrl: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?q=80&w=400' },
-                                                    { nom: 'Hibiki Harmony', type: 'Whisky', prix: 95.00, imageUrl: 'https://images.unsplash.com/photo-1563223771-5fe4038fbfc9?q=80&w=400' },
-                                                    { nom: 'Roku Gin', type: 'Gin', prix: 32.50, imageUrl: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=400' }
-                                                ]}
-                                            }
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        }
-    });
-
-    console.log('✅ Base de données blindée avec succès !');
+    console.log('✅ Seeding terminé avec succès !');
+    console.log(`Données générées : des dizaines de pays, des centaines de régions/producteurs et des milliers de produits.`);
 }
 
 main()
     .catch((e) => {
-        console.error('❌ Erreur lors du seed :', e);
+        console.error(e);
         process.exit(1);
     })
     .finally(async () => {

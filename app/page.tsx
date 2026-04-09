@@ -1,44 +1,86 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import InteractiveMap from "./InteractiveMap";
+import { CountryData } from "./types/types";
 
-export default async function Home() {
-  const continentsDb = await prisma.continent.findMany({
-    orderBy: { nom: 'asc' }
-  });
+// Petit dictionnaire pour traduire les pays DB (FR) en pays Carte (EN)
+const MAP_NAMES_DICT: Record<string, string> = {
+    'France': 'France',
+    'Écosse': 'United Kingdom', 
+    'Irlande': 'Ireland',
+    'Italie': 'Italy',
+    'États-Unis': 'United States of America',
+    'Mexique': 'Mexico',
+    'Cuba': 'Cuba',
+    'Pérou': 'Peru',
+    'Japon': 'Japan',
+    'Taïwan': 'Taiwan',
+    'Inde': 'India',
+    'Afrique du Sud': 'South Africa',
+    'Maurice': 'Mauritius',
+    'Australie': 'Australia',
+    'Nouvelle-Zélande': 'New Zealand',
+};
 
-  return (
-    <div className="flex flex-col min-h-screen bg-zinc-300 text-zinc-950 font-sans">
-      <header className="py-12 px-6 text-center">
-        <h1 className="text-5xl font-bold tracking-tight">Le bar à papa</h1>
-      </header>
+// Fonction pour harmoniser les noms de continents (ex: "Amérique" -> "amerique")
+const slugifyContinent = (nom: string) => {
+    return nom.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
 
-      <main className="flex flex-1 flex-col items-center px-6 max-w-4xl mx-auto">
-        <section className="text-center mb-16">
-          <p className="text-xl leading-relaxed">
-            Bienvenue sur le bar à papa ! Vous êtes invités à découvrir de nombreux spiritueux venant des
-            quatre coins du monde, à passer votre commande ou à souscrire à l&apos;abonnement
-            du bar à papa pour découvrir chaque mois un nouveau spiritueux, et de profiter de votre dégustation !
-          </p>
-        </section>
+export default async function MapPage() {
+    // 1. Prisma récupère TOUTES les données de ma base
+    const paysDb = await prisma.pays.findMany({
+        include: {
+            continent: true,
+            regions: {
+                include: {
+                    producteurs: {
+                        include: {
+                            produits: {
+                                select: { type: true }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
 
-        <section className="w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-            {/* Maintenant je génère dynamiquement les btn de continents depuis le db */}
-            {continentsDb.map((continent) => (
-              <Link
-                key={continent.id}
-                // j'encode le nom pour éviter les bugs avec les espaces et les accents dans l'URL
-                href={`/zones/${encodeURIComponent(continent.nom)}`} 
-                className="flex items-center justify-center h-16 rounded-lg border border-zinc-800 bg-zinc-50 text-zinc-950 font-medium transition-all hover:bg-zinc-200"
-              >
-                {continent.nom}
-              </Link>
-            ))}
-          </div>
-        </section>
+    // 2. On reformate ces données pour que la carte les comprenne
+    const paysPourLaCarte: CountryData[] = paysDb.map((pays) => {
+        let totalProducteurs = 0;
+        let totalProduits = 0;
+        const typeCounts: Record<string, number> = {};
 
+        pays.regions.forEach(region => {
+            totalProducteurs += region.producteurs.length;
+            region.producteurs.forEach(producteur => {
+                totalProduits += producteur.produits.length;
+                producteur.produits.forEach(produit => {
+                    typeCounts[produit.type] = (typeCounts[produit.type] || 0) + 1;
+                });
+            });
+        });
 
-      </main>
-    </div>
-  );
+        const topSpecialite = Object.entries(typeCounts)
+            .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Spiritueux';
+
+        return {
+            slug: encodeURIComponent(pays.nom.toLowerCase()),
+            nom: pays.nom,
+            continent: slugifyContinent(pays.continent.nom), 
+            map_name: MAP_NAMES_DICT[pays.nom] || pays.nom, 
+            stats: {
+                prods: totalProduits,
+                producteurs: totalProducteurs,
+                top: topSpecialite
+            }
+        };
+    });
+
+    // 3. On affiche la page et on passe les données à la carte
+    return (
+        <main className="w-full h-screen bg-black overflow-hidden">
+            <InteractiveMap paysData={paysPourLaCarte} />
+        </main>
+    );
 }

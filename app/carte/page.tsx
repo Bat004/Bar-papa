@@ -10,10 +10,11 @@ const outfit = Outfit({ subsets: ['latin'], display: 'swap', weight: ['300', '40
 const inter = Inter({ subsets: ['latin'], display: 'swap', weight: ['300', '400'] });
 
 const PAYS_BDD = [
-    { slug: 'bresil', nom: 'Brésil', continent: 'am-sud', map_name: 'Brazil' },
-    { slug: 'perou', nom: 'Pérou', continent: 'am-sud', map_name: 'Peru' },
-    { slug: 'colombie', nom: 'Colombie', continent: 'am-sud', map_name: 'Colombia' },
+    { slug: 'bresil', nom: 'Brésil', continent: 'am-sud', map_name: 'Brazil', stats: { prods: 42, producteurs: 8, top: 'Cachaça' } },
+    { slug: 'perou', nom: 'Pérou', continent: 'am-sud', map_name: 'Peru', stats: { prods: 15, producteurs: 3, top: 'Pisco' } },
+    { slug: 'colombie', nom: 'Colombie', continent: 'am-sud', map_name: 'Colombia', stats: { prods: 24, producteurs: 5, top: 'Rhum' } },
 ];
+
 
 const PAYS_MAP_NAMES = PAYS_BDD.map(p => p.map_name);
 
@@ -28,6 +29,7 @@ export default function InteractiveMap() {
     const mapRef = useRef<MapRef>(null);
     const [currentView, setCurrentView] = useState<'globe' | 'continent'>('globe');
     const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
+    const [hoverInfo, setHoverInfo] = useState<{ country: typeof PAYS_BDD[0], x: number, y: number } | null>(null);
     
     const mapStyle = `https://api.maptiler.com/maps/019d6d30-63ca-7574-95bd-599546a4fd9b/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`;
 
@@ -72,10 +74,27 @@ export default function InteractiveMap() {
     const onMouseMove = useCallback((event: MapLayerMouseEvent) => {
         const features = event.features;
         if (features && features.length > 0) {
-            setHoveredCountry(features[0].properties?.name || null);
-        } else {
-            setHoveredCountry(null);
+            const mapName = features[0].properties?.name;
+            // On cherche les infos complètes du pays
+            const countryData = PAYS_BDD.find(p => p.map_name === mapName);
+
+            if (countryData) {
+                setHoveredCountry(mapName);
+                setHoverInfo({
+                    country: countryData,
+                    x: event.point.x, // Coordonnée X de la souris
+                    y: event.point.y  // Coordonnée Y de la souris
+                });
+                return;
+            }
         }
+        setHoveredCountry(null);
+        setHoverInfo(null);
+    }, []);
+
+    const onMouseLeave = useCallback(() => {
+        setHoveredCountry(null);
+        setHoverInfo(null);
     }, []);
 
     return (
@@ -172,7 +191,7 @@ export default function InteractiveMap() {
                         onZoom={handleZoom}
                         interactiveLayerIds={['pays-interactifs']}
                         onMouseMove={onMouseMove}
-                        onMouseLeave={() => setHoveredCountry(null)}
+                        onMouseLeave={onMouseLeave}
                     >
                         <Source 
                             id="countries-source" 
@@ -231,6 +250,37 @@ export default function InteractiveMap() {
                 
                 {/* Vignettage pour fondre la map dans le décor */}
                 <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_200px_rgba(10,18,14,0.9)] z-20" />
+
+                {/* 4. Le composant Tooltip HUD */}
+                {hoverInfo && (
+                    <div 
+                        className="absolute z-50 pointer-events-none animate-hud tooltip-glass p-5 w-64"
+                        style={{ 
+                            left: hoverInfo.x + 20, // Décalé un peu à droite de la souris
+                            top: hoverInfo.y + 20   // Décalé un peu en bas
+                        }}
+                    >
+                        <h3 className={`text-[#D97736] uppercase tracking-[0.15em] text-lg mb-4 ${outfit.className} drop-shadow-[0_0_8px_rgba(217,119,54,0.4)]`}>
+                            {hoverInfo.country.nom}
+                        </h3>
+                        
+                        <div className="space-y-3 text-sm">
+                            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                                <span className="text-[#8EA397] tracking-wider">Produits</span>
+                                <span className="font-medium text-white">{hoverInfo.country.stats.prods}</span>
+                            </div>
+                            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                                <span className="text-[#8EA397] tracking-wider">Producteurs</span>
+                                <span className="font-medium text-white">{hoverInfo.country.stats.producteurs}</span>
+                            </div>
+                            <div className="flex justify-between items-center pt-1">
+                                <span className="text-[#8EA397] tracking-wider">Spécialité</span>
+                                <span className="text-[#D97736] font-medium">{hoverInfo.country.stats.top}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </main>
         </div>
     );

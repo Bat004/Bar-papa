@@ -52,7 +52,6 @@ function FilterAccordion({
     );
 }
 
-
 export default function FiltresProduits({ 
     regions, 
     types, 
@@ -87,9 +86,13 @@ export default function FiltresProduits({
 
     const isMounted = useRef(false);
 
-    // Filtrage visuel des listes
-    const typesAffiches = types.filter(t => t.toLowerCase().includes(typeSearch.toLowerCase()));
-    const regionsAffichees = regions.filter(r => r.toLowerCase().includes(regionSearch.toLowerCase()));
+    // DÉDOUBLONNAGE ET FILTRAGE VISUEL : 
+    // Array.from(new Set(...)) supprime automatiquement les doublons envoyés par le serveur
+    const typesUniques = Array.from(new Set(types));
+    const regionsUniques = Array.from(new Set(regions));
+
+    const typesAffiches = typesUniques.filter(t => t.toLowerCase().includes(typeSearch.toLowerCase()));
+    const regionsAffichees = regionsUniques.filter(r => r.toLowerCase().includes(regionSearch.toLowerCase()));
 
     // 🚪 Fermeture au clic extérieur (UX améliorée)
     const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -288,8 +291,9 @@ export default function FiltresProduits({
                             className="w-full p-3 mb-4 bg-white/5 border border-white/10 rounded-lg text-[#E8E3D9] placeholder-[#8EA397]/40 text-sm outline-none focus:border-[#A3FF90]/30 transition-all"
                         />
                         <div className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar space-y-3">
-                            {typesAffiches.map(type => (
-                                <label key={type} className="flex items-center gap-3.5 cursor-pointer group py-1">
+                            {/* Ajout de index dans la clé React pour éviter l'erreur ! */}
+                            {typesAffiches.map((type, index) => (
+                                <label key={`type-${type}-${index}`} className="flex items-center gap-3.5 cursor-pointer group py-1">
                                     <input 
                                         type="checkbox" 
                                         checked={selectedTypes.includes(type)} 
@@ -314,8 +318,9 @@ export default function FiltresProduits({
                             className="w-full p-3 mb-4 bg-white/5 border border-white/10 rounded-lg text-[#E8E3D9] placeholder-[#8EA397]/40 text-sm outline-none focus:border-[#A3FF90]/30 transition-all"
                         />
                         <div className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar space-y-3">
-                            {regionsAffichees.map(region => (
-                                <label key={region} className="flex items-center gap-3.5 cursor-pointer group py-1">
+                            {/* Ajout de index dans la clé React pour éviter l'erreur ! */}
+                            {regionsAffichees.map((region, index) => (
+                                <label key={`region-${region}-${index}`} className="flex items-center gap-3.5 cursor-pointer group py-1">
                                     <input 
                                         type="checkbox" 
                                         checked={selectedRegions.includes(region)} 

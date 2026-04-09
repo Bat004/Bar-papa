@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outfit } from 'next/font/google';
 import { CountryData } from '../app/types/types';
+import Image from 'next/image';
 
 const outfit = Outfit({ subsets: ['latin'], display: 'swap', weight: ['300', '400', '500'] });
 
@@ -29,23 +30,34 @@ export default function MapSidebar({
 }: MapSidebarProps) {
     return (
         <aside className="w-80 h-full flex flex-col z-20 glass-panel relative">
-            <div className="p-8 border-b border-white/5 flex items-center gap-4">
-                <div className="w-10 h-10 flex-shrink-0 rounded-md border border-[#D97736]/60 shadow-[0_0_15px_rgba(217,119,54,0.3)] bg-[#D97736]/10 flex items-center justify-center">
-                    <span className={`text-[#D97736] text-sm font-normal ${outfit.className}`}>BP</span>
+            <div className="flex items-center gap-4">
+                    
+                <div className="relative w-20 h-20 flex-shrink-0 rounded-md flex items-center justify-center overflow-hidden">
+                    <Image 
+                        src="/logo_bar_a_papa.svg" 
+                        alt="Logo Le Bar à Papa"
+                        fill
+                        className="object-contain p-2.5"
+                        sizes="56px"
+                    />
                 </div>
+                
                 <div>
-                    <h1 className={`text-xl font-normal tracking-wide uppercase text-[#D97736] ${outfit.className} drop-shadow-[0_0_8px_rgba(217,119,54,0.4)]`}>
+                    <h1 className={`text-xl font-normal tracking-wide uppercase ${outfit.className} drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] text-white`}>
                         Le Bar à Papa
                     </h1>
-                    <p className="text-xs mt-0.5 opacity-60 font-light tracking-wider uppercase text-[#8EA397]">Cave & Terroirs</p>
+                    <p className="text-xs mt-0.5 opacity-60 font-light tracking-wider uppercase text-[#8EA397]">
+                        Cave & Terroirs
+                    </p>
                 </div>
+                
             </div>
 
             <div className="p-8 flex-1 flex flex-col gap-6 overflow-y-auto">
                 {currentView === 'globe' ? (
                     <div className="animate-in fade-in duration-700">
                         <h2 className={`text-xs font-normal uppercase tracking-[0.2em] opacity-50 mb-6 text-[#8EA397] ${outfit.className}`}>
-                            Destinations
+                            NAVIGUATION RAPIDE
                         </h2>
                         <div className="flex flex-col gap-4">
                             {Object.entries(CONTINENT_LABELS).map(([key, label]) => (

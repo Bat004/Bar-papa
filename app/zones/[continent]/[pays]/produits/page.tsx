@@ -9,7 +9,7 @@ import "./produits.css";
 const outfit = Outfit({ subsets: ['latin'], display: 'swap', weight: ['300', '400', '500', '700'] });
 
 // Nombre de produits par page
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 8;
 
 export default async function ProduitsPage({
     params,

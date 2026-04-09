@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { Search, MapPin, ChevronDown } from "lucide-react";
 
-// On passe les régions existantes en props depuis le serveur
 export default function FiltresProducteurs({ regionsDisponibles }: { regionsDisponibles: string[] }) {
     const router = useRouter();
     const pathname = usePathname();
@@ -11,30 +11,34 @@ export default function FiltresProducteurs({ regionsDisponibles }: { regionsDisp
 
     const [filtreOuvert, setFiltreOuvert] = useState(false);
     const [rechercheRegion, setRechercheRegion] = useState("");
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // On récupère les valeurs actuelles depuis l'URL
     const currentSearch = searchParams.get("search") || "";
     const currentRegions = searchParams.get("regions")?.split(",").filter(Boolean) || [];
 
-    // Fonction pour mettre à jour l'URL dynamiquement
+    // Fermeture du menu au clic à l'extérieur
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setFiltreOuvert(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     const updateURL = (key: string, value: string | null) => {
         const params = new URLSearchParams(searchParams);
-        if (value) {
-            params.set(key, value);
-        } else {
-            params.delete(key);
-        }
-        // Quand on filtre, on retourne toujours à la page 1
+        if (value) params.set(key, value);
+        else params.delete(key);
         params.set("page", "1"); 
         router.push(`${pathname}?${params.toString()}`);
     };
 
-    // Gérer la recherche globale (Producteurs)
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         updateURL("search", e.target.value);
     };
 
-    // Gérer les cases à cocher des régions
     const handleRegionToggle = (region: string) => {
         let newRegions = [...currentRegions];
         if (newRegions.includes(region)) {
@@ -45,59 +49,72 @@ export default function FiltresProducteurs({ regionsDisponibles }: { regionsDisp
         updateURL("regions", newRegions.join(","));
     };
 
-    // Filtrer les régions affichées dans le menu déroulant
     const regionsFiltrees = regionsDisponibles.filter((r) =>
         r.toLowerCase().includes(rechercheRegion.toLowerCase())
     );
 
     return (
-        <div className="search-bar">
-            <div className="search-wrapper">
+        <div className="flex flex-col sm:flex-row gap-4 mb-10 items-center justify-between font-sans">
+            {/* Barre de recherche principale */}
+            <div className="relative w-full sm:max-w-md group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-[#8EA397] group-focus-within:text-[#A3FF90] transition-colors" />
+                </div>
                 <input
                     type="text"
                     placeholder="Rechercher un producteur..."
-                    className="search-input"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#0B0E0C]/80 border border-[#1B3126] rounded-lg text-[#E8E3D9] placeholder-[#8EA397] focus:outline-none focus:border-[#A3FF90]/50 focus:ring-1 focus:ring-[#A3FF90]/30 transition-all shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]"
                     defaultValue={currentSearch}
-                    onChange={(e) => {
-                        // Petit délai pour ne pas spammer l'URL à chaque frappe
-                        setTimeout(() => handleSearchChange(e), 300);
-                    }}
+                    onChange={(e) => setTimeout(() => handleSearchChange(e), 300)}
                 />
             </div>
             
-            <div className="filter-container" style={{ position: "relative" }}>
+            {/* Bouton et Menu des Filtres */}
+            <div className="relative w-full sm:w-auto" ref={dropdownRef}>
                 <button
-                    className="filter-button"
+                    className={`btn-glass px-5 py-2.5 w-full sm:w-auto justify-between gap-3 ${filtreOuvert ? 'active' : ''}`}
                     onClick={() => setFiltreOuvert(!filtreOuvert)}
                 >
-                    Filtrer par Région {currentRegions.length > 0 && `(${currentRegions.length})`}
+                    <span className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Régions {currentRegions.length > 0 && <span className="bg-[#D97736] text-[#0A120E] text-xs font-bold px-2 py-0.5 rounded-full">{currentRegions.length}</span>}
+                    </span>
+                    <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${filtreOuvert ? "rotate-180" : ""}`} />
                 </button>
 
                 {filtreOuvert && (
-                    <div className="filter-panel" style={{ position: "absolute", top: "100%", right: 0, zIndex: 10, background: "white", padding: "1rem", border: "1px solid #ccc", borderRadius: "8px", minWidth: "200px" }}>
-                        <p className="filter-title font-bold mb-2">Régions</p>
+                    <div className="tooltip-glass animate-hud absolute top-full right-0 mt-3 w-full sm:w-64 z-50 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm font-semibold text-[#D97736] uppercase tracking-wider">Filtrer par région</p>
+                            {currentRegions.length > 0 && (
+                                <button onClick={() => updateURL("regions", null)} className="text-xs text-[#8EA397] hover:text-[#E8E3D9] transition-colors">Effacer</button>
+                            )}
+                        </div>
                         
-                        {/* Recherche interne pour les régions */}
-                        <input 
-                            type="text" 
-                            placeholder="Chercher une région..." 
-                            className="search-input mb-2 p-1 border rounded w-full text-sm"
-                            value={rechercheRegion}
-                            onChange={(e) => setRechercheRegion(e.target.value)}
-                        />
+                        <div className="relative mb-3">
+                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#8EA397]" />
+                            <input 
+                                type="text" 
+                                placeholder="Chercher..." 
+                                className="w-full pl-8 pr-2 py-1.5 bg-[#0A120E] border border-[#1B3126] rounded text-sm text-[#E8E3D9] focus:outline-none focus:border-[#D97736]/50 transition-colors"
+                                value={rechercheRegion}
+                                onChange={(e) => setRechercheRegion(e.target.value)}
+                            />
+                        </div>
 
-                        <div style={{ maxHeight: "150px", overflowY: "auto" }}>
+                        <div className="max-h-48 overflow-y-auto pr-1 space-y-2">
                             {regionsFiltrees.length > 0 ? regionsFiltrees.map((region) => (
-                                <label key={region} className="filter-option flex items-center gap-2 mb-1">
+                                <label key={region} className="flex items-center gap-3 cursor-pointer group p-1 rounded hover:bg-[#1B3126]/30 transition-colors">
                                     <input 
                                         type="checkbox" 
+                                        className="custom-checkbox"
                                         checked={currentRegions.includes(region)}
                                         onChange={() => handleRegionToggle(region)}
                                     />
-                                    {region}
+                                    <span className="text-sm text-[#E8E3D9] group-hover:text-[#A3FF90] transition-colors">{region}</span>
                                 </label>
                             )) : (
-                                <p className="text-sm text-gray-500">Aucune région trouvée</p>
+                                <p className="text-xs text-[#8EA397] text-center py-2">Aucune région trouvée</p>
                             )}
                         </div>
                     </div>

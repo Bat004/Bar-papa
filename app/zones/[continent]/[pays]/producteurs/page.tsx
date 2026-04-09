@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import FiltresProducteurs from "./FiltresProducteurs";
-import "../../listes.css";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 
 const PER_PAGE = 8;
 
@@ -15,21 +15,18 @@ export default async function ProducteursPage({
     params: Promise<{ continent: string; pays: string }>;
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-    // 1. On attend la résolution des paramètres de l'URL
     const resolvedParams = await params;
     const resolvedSearchParams = await searchParams;
 
     const nomContinent = decodeURIComponent(resolvedParams.continent);
     const nomPays = decodeURIComponent(resolvedParams.pays);
 
-    // 2. On lit les filtres depuis l'URL (searchParams)
     const page = Number(resolvedSearchParams.page) || 1;
     const search = typeof resolvedSearchParams.search === 'string' ? resolvedSearchParams.search : "";
     const regionsFilter = typeof resolvedSearchParams.regions === 'string' 
         ? resolvedSearchParams.regions.split(",") 
         : [];
 
-    // 3. On récupère TOUTES les régions de ce pays pour alimenter le menu déroulant
     const paysData = await prisma.pays.findFirst({
         where: { nom: nomPays, continent: { nom: nomContinent } },
         include: { regions: { select: { nom: true } } }
@@ -38,40 +35,24 @@ export default async function ProducteursPage({
     if (!paysData) return notFound();
     const regionsDisponibles = paysData.regions.map(r => r.nom).sort();
 
-    // 4. On prépare les conditions de recherche pour Prisma
     const conditionsPrisma: Prisma.ProducteurWhereInput = {
-        region: { paysId: paysData.id } // Toujours limiter au pays actuel
+        region: { paysId: paysData.id }
     };
 
-    if (search) {
-        conditionsPrisma.nom = { contains: search, mode: "insensitive" }; // Recherche globale
-    }
+    if (search) conditionsPrisma.nom = { contains: search, mode: "insensitive" };
+    if (regionsFilter.length > 0) conditionsPrisma.region = { paysId: paysData.id, nom: { in: regionsFilter } };
 
-    if (regionsFilter.length > 0) {
-        // On remplace complètement l'objet 'region' pour rassurer TypeScript
-        conditionsPrisma.region = { 
-            paysId: paysData.id,
-            nom: { in: regionsFilter } 
-        };
-    }
-
-    // 5. On compte le total pour la pagination
     const totalProducteurs = await prisma.producteur.count({ where: conditionsPrisma });
     const totalPages = Math.ceil(totalProducteurs / PER_PAGE);
 
-    // 6. On récupère les producteurs paginés et triés (par région, puis par nom)
     const producteurs = await prisma.producteur.findMany({
         where: conditionsPrisma,
-        orderBy: [
-            { region: { nom: "asc" } },
-            { nom: "asc" }
-        ],
+        orderBy: [{ region: { nom: "asc" } }, { nom: "asc" }],
         skip: (page - 1) * PER_PAGE,
         take: PER_PAGE,
-        include: { region: true } // On inclut la région pour pouvoir afficher son nom
+        include: { region: true }
     });
 
-    // 7. Petite astuce JS : On groupe les producteurs par région pour l'affichage
     const producteursParRegion = producteurs.reduce((acc, producteur) => {
         const regionNom = producteur.region.nom;
         if (!acc[regionNom]) acc[regionNom] = [];
@@ -79,7 +60,6 @@ export default async function ProducteursPage({
         return acc;
     }, {} as Record<string, typeof producteurs>);
 
-    // Création de l'URL de base pour la pagination
     const createPageURL = (pageNumber: number) => {
         const params = new URLSearchParams();
         if (search) params.set("search", search);
@@ -89,68 +69,95 @@ export default async function ProducteursPage({
     };
 
     return (
-        <div className="page">
-            <header className="header">
-                <Link href={`/zones/${encodeURIComponent(nomContinent)}`} className="btn-retour">← Retour</Link>
-                <h1>Producteurs de {nomPays}</h1>
+        <div className="min-h-screen text-[#E8E3D9] font-sans max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
+            
+            <header className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-12">
+                <Link href={`/`} className="btn-glass px-4 py-2 text-sm">
+                    <ArrowLeft className="h-4 w-4 mr-2" /> Retour
+                </Link>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+                    Producteurs de <span className="font-semibold text-[#D97736] drop-shadow-[0_0_10px_rgba(217,119,54,0.5)]">{nomPays}</span>
+                </h1>
             </header>
 
-            {/* Notre Client Component qui gère la barre de recherche et les cases à cocher */}
             <FiltresProducteurs regionsDisponibles={regionsDisponibles} />
 
-            <div className="liste-content">
+            <div className="space-y-12">
                 {Object.keys(producteursParRegion).length === 0 ? (
-                    <p className="text-center text-gray-500 mt-8">Aucun producteur ne correspond à votre recherche.</p>
+                    <div className="glass-panel p-10 text-center rounded-xl border border-[#1B3126]">
+                        <p className="text-[#8EA397] text-lg">Aucun producteur ne correspond à votre recherche.</p>
+                    </div>
                 ) : (
                     Object.entries(producteursParRegion).map(([regionNom, prods]) => (
-                        <div key={regionNom}>
-                            <h2 className="region-title">{regionNom}</h2>
-                            {prods.map((producteur) => (
-                                <div key={producteur.id} className="producteur-card">
-                                    {/* Gestion du logo : S'il y a un logoUrl en BDD on l'affiche, sinon on met un carré gris par défaut */}
-                                    {producteur.logoUrl ? (
-                                        <Image 
-
-                                            src={producteur.logoUrl}
-                                            alt={`Logo ${producteur.nom}`} 
-                                            width={100} 
-                                            height={100} 
-                                            className="producteur-image object-contain" 
-                                        />
-                                    ) : (
-                                        <div className="producteur-image bg-zinc-200 flex items-center justify-center text-xs text-zinc-500">Logo</div>
-                                    )}
-                                    
-                                    <span className="producteur-nom">{producteur.nom}</span>
-                                    
-                                    <Link href={`/zones/${encodeURIComponent(nomContinent)}/${encodeURIComponent(nomPays)}/producteurs/${producteur.id}`}>
-                                        <button className="decouvrir-button">Découvrir →</button>
+                        <div key={regionNom} className="animate-hud">
+                            <h2 className="text-xl font-semibold text-[#D97736] border-b border-[#D97736]/30 pb-2 mb-6 inline-block">
+                                {regionNom}
+                            </h2>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                {prods.map((producteur) => (
+                                    <Link 
+                                        key={producteur.id} 
+                                        href={`/zones/${encodeURIComponent(nomContinent)}/${encodeURIComponent(nomPays)}/producteurs/${producteur.id}`}
+                                        className="glass-panel anim-up-modal rounded-xl p-5 flex flex-col items-center text-center gap-4 group cursor-pointer"
+                                    >
+                                        
+                                        <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#1B3126] group-hover:border-[#A3FF90]/50 transition-colors duration-300 relative bg-[#0A120E] flex items-center justify-center shadow-[inset_0_0_15px_rgba(0,0,0,0.8)] flex-shrink-0">
+                                            {producteur.logoUrl ? (
+                                                <Image 
+                                                    src={producteur.logoUrl}
+                                                    alt={`Logo ${producteur.nom}`} 
+                                                    fill
+                                                    className="object-contain p-2" 
+                                                />
+                                            ) : (
+                                                <span className="text-xs text-[#8EA397] font-mono">NO LOGO</span>
+                                            )}
+                                        </div>
+                                        
+                                        <span className="font-medium text-lg text-[#E8E3D9] group-hover:text-[#A3FF90] transition-colors line-clamp-1">
+                                            {producteur.nom}
+                                        </span>
+                                        
+                                        {/* On remplace le <button> par une <div> qui agit visuellement comme un bouton */}
+                                        <div className="mt-auto w-full py-2 rounded-lg border border-[#8EA397]/30 text-sm text-[#8EA397] group-hover:border-[#D97736] group-hover:text-[#D97736] group-hover:bg-[#D97736]/10 transition-all text-center">
+                                            Découvrir →
+                                        </div>
+                                        
                                     </Link>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     ))
                 )}
             </div>
 
-            {/* Pagination avec des vrais liens (meilleur pour le SEO que des boutons onClick) */}
+            {/* Pagination repensée avec la DA */}
             {totalPages > 1 && (
-                <div className="pagination">
+                <div className="flex items-center justify-center gap-4 mt-16 pb-8">
                     {page > 1 ? (
-                        <Link href={createPageURL(page - 1)} className="pagination-btn">&lt;</Link>
+                        <Link href={createPageURL(page - 1)} className="btn-glass p-2">
+                            <ChevronLeft className="h-5 w-5" />
+                        </Link>
                     ) : (
-                        <span className="pagination-btn opacity-50 cursor-not-allowed">&lt;</span>
+                        <span className="p-2 border border-[#1B3126] text-[#1B3126] rounded-lg cursor-not-allowed">
+                            <ChevronLeft className="h-5 w-5" />
+                        </span>
                     )}
                     
-                    <span className="pagination-info">{page}</span>
+                    <span className="px-4 py-2 glass-panel rounded-lg font-mono text-[#E8E3D9] text-sm">
+                        <span className="text-[#A3FF90] font-bold">{page}</span> / {totalPages}
+                    </span>
                     
                     {page < totalPages ? (
-                        <Link href={createPageURL(page + 1)} className="pagination-btn">&gt;</Link>
+                        <Link href={createPageURL(page + 1)} className="btn-glass p-2">
+                            <ChevronRight className="h-5 w-5" />
+                        </Link>
                     ) : (
-                        <span className="pagination-btn opacity-50 cursor-not-allowed">&gt;</span>
+                        <span className="p-2 border border-[#1B3126] text-[#1B3126] rounded-lg cursor-not-allowed">
+                            <ChevronRight className="h-5 w-5" />
+                        </span>
                     )}
-                    
-                    <span className="pagination-total">Page {page} / {totalPages}</span>
                 </div>
             )}
         </div>

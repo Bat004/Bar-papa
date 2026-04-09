@@ -41,9 +41,9 @@ body {
   
   /* Lueur interne, lueur externe (or-orange), et ombre globale (noir) */
   box-shadow: 
-    inset -2px 0 15px rgba(217, 119, 54, 0.05), /* Lueur interne subtile */
-    4px 0 25px rgba(217, 119, 54, 0.15),        /* Glow externe or-orange */
-    15px 0 40px rgba(0, 0, 0, 0.8);             /* Ombre pour détacher la sidebar */
+    inset -2px 0 15px rgba(217, 119, 54, 0.05),
+    4px 0 25px rgba(217, 119, 54, 0.15),        
+    15px 0 40px rgba(0, 0, 0, 0.8);             
 }
 /* =========================================
    BOUTONS GLASS (Vert Néon -> Cuivre)
@@ -63,8 +63,8 @@ body {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  transform: translateX(0); /* Point de départ pour l'anim */
-  display: flex; /* Utile pour l'alignement du texte */
+  transform: translateX(0);
+  display: flex;
   align-items: center;
 }
 
@@ -110,15 +110,12 @@ body {
 
 /* Grille en perspective (Style "Sol Infini" Synthwave) */
 .perspective-grid {
-  /* Lignes or-orange très discrètes pour la grille */
   background-image: 
     linear-gradient(rgba(244, 137, 65, 0.505) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 136, 56, 0.279) 1px, transparent 1px);
   background-size: 50px 50px;
-  /* On couche la grille pour en faire un sol */
   transform: perspective(600px) rotateX(75deg) scale(3) translateY(100px);
   transform-origin: center 70%;
-  /* Dégradé pour que la grille n'apparaisse qu'en bas et s'efface vers l'horizon */
   mask-image: linear-gradient(to bottom, transparent 30%, black 70%);
   -webkit-mask-image: linear-gradient(to bottom, transparent 30%, black 80%);
 }
@@ -128,12 +125,12 @@ body {
   0% { 
     opacity: 0; 
     transform: scale(0.95) translateY(10px); 
-    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); /* Boîte écrasée vers le haut */
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0); 
   }
   100% { 
     opacity: 1; 
     transform: scale(1) translateY(0); 
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); /* Boîte entièrement ouverte */
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); 
   }
 }
 
@@ -141,9 +138,9 @@ body {
   animation: hudReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Le design de la boîte flottante (synchronisé avec tes boutons) */
+/* Le design de la boîte flottante */
 .tooltip-glass {
-  background: rgba(10, 18, 14, 0.85); /* Fond très sombre et opaque pour la lisibilité */
+  background: rgba(10, 18, 14, 0.85); 
   backdrop-filter: blur(12px);
   border: 1px solid rgba(217, 119, 54, 0.2);
   box-shadow: 
@@ -154,7 +151,6 @@ body {
   overflow: hidden;
 }
 
-/* Ligne lumineuse en haut de la tooltip */
 .tooltip-glass::before {
   content: '';
   position: absolute;
@@ -173,14 +169,13 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A120E; /* Couleur de fond de ton site */
+  background: #0A120E; 
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.4); /* Vert émeraude transparent */
+  background: rgba(16, 185, 129, 0.4); 
   border-radius: 10px;
-  /* Effet de lueur interne */
   box-shadow: inset 0 0 6px rgba(16, 185, 129, 0.8);
   border: 1px solid #0A120E;
 }
@@ -189,7 +184,6 @@ body {
   background: rgba(16, 185, 129, 0.7);
   box-shadow: inset 0 0 10px rgba(16, 185, 129, 1);
 }
-
 
 /* =========================================
    COEUR CARTES PRODUITS (Lueur aléatoire)
@@ -204,8 +198,8 @@ body {
   right: 16px;
   font-size: 22px;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(217, 119, 54, 0.5); /* Contour cuivre fin */
-  filter: drop-shadow(0 0 6px rgba(217, 119, 54, 0.4)); /* Lueur externe */
+  -webkit-text-stroke: 1px rgba(217, 119, 54, 0.5); 
+  filter: drop-shadow(0 0 6px rgba(217, 119, 54, 0.4)); 
   z-index: 10;
   transition: all 0.4s ease;
 }

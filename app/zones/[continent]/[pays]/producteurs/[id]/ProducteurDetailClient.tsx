@@ -1,12 +1,12 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import FiltresProduitsProducteur from './FiltresProduitsProducteur';
+import BackButton from '@/components/BackButton';
 import { Produit, Prisma } from '@prisma/client';
+import { MapPin, Box, ChevronRight } from 'lucide-react';
 
-// On type ce qu'on reçoit du Server Component
 export default function ProducteurDetailClient({
     continent,
     pays,
@@ -24,134 +24,133 @@ export default function ProducteurDetailClient({
     minPriceBase: number;
     maxPriceBase: number;
 }) {
-    const router = useRouter();
-
     return (
-        <div className="min-h-screen bg-zinc-300 text-zinc-950 font-sans flex flex-col">
+        <div className="min-h-screen text-[#E8E3D9] font-sans pb-16 relative z-10 overflow-x-hidden bg-[#0A120E]">
+            
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* BOUTON RETOUR */}
+                <div className="pt-8 pb-6 animate-hud relative z-20">
+                    <BackButton />
+                </div>
 
-            <div className="px-6 pt-6">
-                <button
-                    onClick={() => router.back()}
-                    className="inline-flex items-center gap-2 text-zinc-600 font-bold text-sm px-3 py-2 bg-zinc-200 rounded-lg hover:bg-zinc-400 transition-colors"
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" />
-                    </svg>
-                    Retour
-                </button>
-            </div>
+                {/* Ajout de items-start pour permettre le sticky des enfants */}
+                <main className="grid grid-cols-1 lg:grid-cols-12 gap-10 relative items-start">
 
-            <main className="flex flex-1 gap-0 overflow-hidden mt-6 pb-6">
+                    {/* COLONNE GAUCHE FIXE (Sticky parfait) */}
+                    {/* sticky + top-6 + max-h pour que ça défile en interne si c'est trop long */}
+                    <div className="lg:col-span-4 flex flex-col gap-6 animate-hud self-start lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] overflow-y-auto custom-scrollbar z-30" style={{ animationDelay: '0.1s' }}>
+                        
+                        <div className="glass-panel p-8 rounded-xl flex flex-col items-center text-center relative overflow-hidden">
+                            <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#1B3126] to-transparent opacity-60 z-0 pointer-events-none" />
 
-                {/* COLONNE GAUCHE : Infos Producteur */}
-                <div className="w-1/2 px-8 flex flex-col gap-4">
-                    <div className="flex gap-6 items-start">
-                        <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                            <div className="w-40 h-40 rounded-xl overflow-hidden bg-zinc-200 shadow-md flex items-center justify-center">
+                            <div className="relative z-10 w-32 h-32 rounded-full overflow-hidden border border-[#D97736]/20 bg-[#070B09] shadow-[0_0_20px_rgba(0,0,0,0.8)] mb-6 flex items-center justify-center flex-shrink-0">
                                 {producteur.logoUrl ? (
                                     <Image
                                         src={producteur.logoUrl}
                                         alt={producteur.nom}
-                                        width={160}
-                                        height={160}
-                                        sizes="(max-width: 1024px) 100vw, 33vw"
-                                        className="w-full h-full object-cover"
+                                        fill
+                                        className="object-contain p-4 drop-shadow-[0_0_8px_rgba(217,119,54,0.3)]"
+                                        sizes="128px"
                                         priority
                                     />
                                 ) : (
-                                    <span className="text-zinc-500 text-sm font-medium">Logo</span>
+                                    <span className="text-[#8EA397] text-xs font-mono tracking-widest">NO LOGO</span>
                                 )}
                             </div>
-                            {/* On affiche le nom de la région ou l'adresse selon ce que tu as en BDD */}
-                            <p className="text-xs text-zinc-500 text-center font-semibold">
-                                {producteur.region?.nom || "Adresse non renseignée"}
+
+                            <h1 className="text-2xl font-bold text-[#E8E3D9] tracking-wider mb-3 uppercase">{producteur.nom}</h1>
+                            
+                            <div className="flex items-center gap-2 text-xs text-[#A3FF90] font-mono tracking-widest mb-6 bg-white/5 px-4 py-2 rounded-md border border-[#A3FF90]/20 shadow-[inset_0_0_10px_rgba(163,255,144,0.05)]">
+                                <MapPin className="h-4 w-4 drop-shadow-[0_0_5px_currentColor]" />
+                                {producteur.region?.nom || "Zone inconnue"}
+                            </div>
+
+                            <div className="w-12 h-px bg-gradient-to-r from-transparent via-[#D97736] to-transparent mb-6 opacity-60" />
+
+                            <p className="text-[#8EA397] leading-relaxed text-sm font-light text-center px-2">
+                                {producteur.description || "Les archives de la base de données ne contiennent aucune description pour cette entité."}
                             </p>
                         </div>
 
-                        <div className="flex-1">
-                            <h1 className="text-2xl font-bold text-zinc-900 mb-3">{producteur.nom}</h1>
-                            <p className="text-zinc-700 leading-relaxed text-sm">
-                                {producteur.description || "Aucune description disponible pour ce producteur."}
-                            </p>
+                        {/* Compteur de références */}
+                        <div className="glass-panel p-6 rounded-xl flex items-center justify-between border-b border-b-[#D97736]/40">
+                            <div className="flex items-center gap-3">
+                                <Box className="h-5 w-5 text-[#D97736] drop-shadow-[0_0_5px_currentColor]" />
+                                <span className="text-sm font-mono text-[#8EA397] uppercase tracking-wider">Références</span>
+                            </div>
+                            <span className="text-3xl font-bold text-[#D97736] drop-shadow-[0_0_10px_rgba(217,119,54,0.4)]">
+                                {Object.values(produitsParType).flat().length}
+                            </span>
                         </div>
                     </div>
-                </div>
 
-                <div className="w-px bg-zinc-400 self-stretch my-2" />
+                    {/* COLONNE DROITE : Inventaire Défilable */}
+                    <div className="lg:col-span-8 flex flex-col animate-hud relative z-20" style={{ animationDelay: '0.2s' }}>
+                        
+                        <div className="bg-transparent rounded-xl min-h-[600px] flex flex-col">
+                            
+                            <FiltresProduitsProducteur 
+                                types={typesUniques} 
+                                minPriceBase={minPriceBase} 
+                                maxPriceBase={maxPriceBase} 
+                            />
 
-                {/* COLONNE DROITE : Les Produits + Filtres */}
-                <div className="w-1/2 px-8 flex flex-col overflow-hidden">
-
-                    <div className="mb-4">
-                        <h2 className="text-xl font-bold text-zinc-900 mb-3">Ses produits</h2>
-                        {/* INJECTION DE TON COMPOSANT DE FILTRE */}
-                        <FiltresProduitsProducteur 
-                            types={typesUniques} 
-                            minPriceBase={minPriceBase} 
-                            maxPriceBase={maxPriceBase} 
-                        />
-                    </div>
-
-                    <div className="overflow-y-auto flex-1 pr-1 custom-scrollbar">
-                        {Object.keys(produitsParType).length === 0 ? (
-                            <p className="text-center text-zinc-500 mt-6 text-sm">Aucun produit trouvé avec ces filtres.</p>
-                        ) : (
-                            Object.entries(produitsParType).map(([type, produits]) => (
-                                <div key={type} className="mb-5">
-                                    <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2 pb-1 border-b border-zinc-300">
-                                        {type}
-                                    </h3>
-                                    <div className="space-y-2">
-                                        {produits.map((produit) => (
-                                            <Link 
-                                                key={produit.id}
-                                                href={`/zones/${encodeURIComponent(continent)}/${encodeURIComponent(pays)}/produits/${produit.id}`}
-                                                className="flex items-center gap-4 bg-white rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-300 border border-transparent hover:border-orange-200 no-underline group"
-                                            >
-                                                {/* L'image du produit à gauche */}
-                                                <div className="relative w-16 h-16 rounded-md overflow-hidden bg-zinc-100 flex-shrink-0">
-                                                    {/* Si tu as une propriété imageUrl dans ton modèle Produit */}
-                                                    {produit.imageUrl ? (
-                                                        <Image
-                                                            src={produit.imageUrl}
-                                                            alt={produit.nom}
-                                                            fill
-                                                            className="object-cover"
-                                                            sizes="64px"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-[10px] text-zinc-400 text-center">
-                                                            Sans image
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Les infos au centre */}
-                                                <div className="flex-1 min-w-0">
-                                                    <span className="block text-base font-semibold text-zinc-900 group-hover:text-orange-600 transition-colors truncate">
-                                                        {produit.nom}
-                                                    </span>
-                                                    <span className="block text-sm font-bold text-zinc-700 mt-1">
-                                                        {Number(produit.prix).toFixed(2)} €
-                                                    </span>
-                                                </div>
-
-                                                {/* Le CTA stylé à droite (animé au hover) */}
-                                                <div className="flex items-center gap-2 pr-2 text-sm font-medium text-orange-600 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                                                    <span className="hidden sm:inline">Découvrir</span>
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
-                                                    </svg>
-                                                </div>
-                                            </Link>
-                                        ))}
+                            <div className="space-y-12 mt-2 relative">
+                                {Object.keys(produitsParType).length === 0 ? (
+                                    <div className="text-center py-20 border border-dashed border-white/10 rounded-xl bg-white/5 backdrop-blur-sm">
+                                        <p className="text-[#8EA397] font-mono text-sm tracking-wider uppercase">Aucune correspondance détectée.</p>
                                     </div>
-                                </div>
-                            ))
-                        )}
+                                ) : (
+                                    Object.entries(produitsParType).map(([type, produits]) => (
+                                        <div key={type} className="animate-hud">
+                                            {/* Header de la catégorie */}
+                                            <h3 className="text-sm font-mono font-bold text-[#D97736] uppercase tracking-widest mb-6 flex items-center gap-4 drop-shadow-[0_0_5px_rgba(217,119,54,0.4)]">
+                                                <span className="w-2 h-2 rounded-full bg-[#D97736]"></span>
+                                                {type}
+                                                <span className="flex-1 h-px bg-gradient-to-r from-[#D97736]/40 to-transparent"></span>
+                                            </h3>
+                                            
+                                            {/* Grille des produits - LISTE MINIMALISTE */}
+                                            <div className="flex flex-col gap-3">
+                                                {produits.map((produit) => (
+                                                    <Link 
+                                                        key={produit.id} 
+                                                        href={`/zones/${encodeURIComponent(continent)}/${encodeURIComponent(pays)}/produits/${produit.id}`} 
+                                                        className="flex items-center justify-between p-4 border border-white/5 rounded-lg bg-[rgba(23,38,30,0.3)] hover:bg-[rgba(23,38,30,0.6)] hover:border-[#A3FF90]/30 transition-all duration-300 group"
+                                                    >
+                                                        {/* Infos principales */}
+                                                        <div className="flex flex-col pr-4">
+                                                            <span className="text-[10px] text-[#D97736] tracking-widest font-mono uppercase mb-1">
+                                                                {type}
+                                                            </span>
+                                                            <h3 className="text-[#E8E3D9] font-medium text-sm sm:text-base group-hover:text-[#A3FF90] transition-colors leading-tight">
+                                                                {produit.nom}
+                                                            </h3>
+                                                        </div>
+
+                                                        {/* Prix et Action */}
+                                                        <div className="flex items-center gap-4 sm:gap-6 shrink-0">
+                                                            <span className="text-[#A3FF90] font-mono text-sm opacity-80 drop-shadow-[0_0_5px_rgba(163,255,144,0.3)]">
+                                                                {Number(produit.prix).toFixed(2)} €
+                                                            </span>
+                                                            <button className="btn-glass px-4 py-2 text-xs font-semibold rounded uppercase tracking-wider hidden sm:flex items-center gap-2">
+                                                                Explorer
+                                                                <ChevronRight className="w-4 h-4" />
+                                                            </button>
+                                                            {/* Version mobile de la flèche */}
+                                                            <ChevronRight className="w-5 h-5 text-[#8EA397] group-hover:text-[#A3FF90] sm:hidden transition-colors" />
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </main>
+                </main>
+            </div>
         </div>
     );
 }

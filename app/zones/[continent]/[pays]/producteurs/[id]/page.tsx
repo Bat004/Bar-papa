@@ -64,7 +64,7 @@ export default async function ProducteurDetailPage({
     });
     const typesUniques = typesBruts.map(t => t.type);
 
-    // 6. Regroupement des produits affichés par type (comme dans ton design)
+    // 6. Regroupement des produits affichés par type
     const produitsParType = produits.reduce((acc, produit) => {
         const type = produit.type;
         if (!acc[type]) acc[type] = [];

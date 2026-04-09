@@ -116,3 +116,64 @@
   background: #A3FF90 !important;
   box-shadow: 0 0 10px rgba(163, 255, 144, 0.5);
 }
+
+/* =========================================
+   PAGE DÉTAIL PRODUIT
+   ========================================= */
+
+/* Cadre de l'image principale avec lueur subtile */
+.hero-image-glass {
+  background: rgba(10, 18, 14, 0.6);
+  border: 1px solid rgba(163, 255, 144, 0.15);
+  border-radius: 12px;
+  box-shadow: 
+    inset 0 0 40px rgba(163, 255, 144, 0.02),
+    0 15px 35px rgba(0, 0, 0, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Bouton d'achat XXL en Cuivre/Orange */
+.btn-buy-copper {
+  background: rgba(217, 119, 54, 0.15);
+  border: 1px solid rgba(217, 119, 54, 0.6);
+  color: #D97736;
+  text-shadow: 0 0 10px rgba(217, 119, 54, 0.5);
+  box-shadow: 
+    0 0 20px rgba(217, 119, 54, 0.2),
+    inset 0 0 15px rgba(217, 119, 54, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-buy-copper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #D97736, transparent);
+  box-shadow: 0 2px 15px rgba(217, 119, 54, 0.9);
+}
+
+.btn-buy-copper:hover {
+  background: rgba(217, 119, 54, 0.25);
+  transform: translateY(-3px);
+  box-shadow: 
+    0 10px 30px rgba(217, 119, 54, 0.3),
+    inset 0 0 20px rgba(217, 119, 54, 0.2);
+}
+
+/* Texte effet Néon Vert */
+.text-neon-vert {
+  color: #A3FF90;
+  text-shadow: 0 0 12px rgba(163, 255, 144, 0.4);
+}
+
+/* Texte effet Néon Cuivre (Prix) */
+.text-neon-cuivre {
+  color: #D97736;
+  text-shadow: 0 0 15px rgba(217, 119, 54, 0.5);
+}

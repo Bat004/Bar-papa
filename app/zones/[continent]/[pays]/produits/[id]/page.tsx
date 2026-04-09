@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 
 export default async function ProductPage({ 
   params 
@@ -12,180 +13,209 @@ export default async function ProductPage({
   const continentDecoded = decodeURIComponent(resolvedParams.continent);
   const paysDecoded = decodeURIComponent(resolvedParams.pays);
   
-  // On convertit l'ID de l'URL (string) en nombre (int) pour Prisma
   const productId = parseInt(resolvedParams.id, 10);
 
   if (isNaN(productId)) {
-    notFound(); // Si l'ID n'est pas un nombre, on renvoie une 404
+    notFound(); 
   }
 
-  // 1. Récupération du vrai produit avec les infos de son producteur
+  // 1. Récupération du vrai produit
   const product = await prisma.produit.findUnique({
     where: { id: productId },
     include: { producteur: true }
   });
 
-  // Si le produit n'existe pas dans la BDD, on renvoie une 404
   if (!product) {
     notFound();
   }
 
-  // 2. Récupération de 4 produits similaires (même type ou même producteur)
+  // 2. Récupération de 4 produits similaires
   const similarProducts = await prisma.produit.findMany({
     where: {
-      id: { not: productId }, // On exclut le produit qu'on est en train de regarder
+      id: { not: productId },
       OR: [
         { type: product.type },
         { producteurId: product.producteurId }
       ]
     },
-    take: 4, // On limite à 4 résultats pour ne pas surcharger la page
+    take: 4,
     include: { producteur: true }
   });
 
   return (
-    <div className="min-h-screen bg-zinc-300 text-zinc-950 font-sans">
-      {/* BOUTON RETOUR */}
-      <div className="py-6 px-6 max-w-7xl mx-auto">
-        <Link
-          href={`/zones/${encodeURIComponent(continentDecoded)}/${encodeURIComponent(paysDecoded)}/produits`}
-          className="inline-flex items-center gap-2 text-zinc-600 font-bold text-sm px-3 py-2 bg-zinc-200 rounded-lg transition-colors hover:bg-zinc-300 no-underline"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Retour aux produits
-        </Link>
+    // On s'assure que le fond est transparent car le body gère la couleur de base (#0A120E)
+    <div className="min-h-screen text-[#E8E3D9] font-sans pb-16">
+      
+      {/* HEADER / BOUTON RETOUR */}
+      <div className="pt-8 pb-4 px-6 max-w-7xl mx-auto animate-hud">
+        <BackButton />
       </div>
 
       {/* CONTENU PRINCIPAL */}
-      <main className="px-6 py-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <main className="px-6 py-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* COLONNE GAUCHE - IMAGE ET BOUTON PRODUCTEUR */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg overflow-hidden shadow-md mb-6">
+          {/* COLONNE GAUCHE (Image + Producteur) - 4 colonnes */}
+          <div className="lg:col-span-4 space-y-6 animate-hud" style={{ animationDelay: '0.1s' }}>
+            
+            {/* Image Produit */}
+            <div className="hero-image-glass w-full aspect-[4/5] flex items-center justify-center">
               {product.imageUrl ? (
-                <div className="relative w-full h-96">
-                  <Image
-                    src={product.imageUrl}
-                    alt={product.nom}
-                    fill
-                    style={{ objectFit: 'cover' }}
-                    sizes="(max-width: 1024px) 100vw, 33vw"
-                    priority
-                  />
-                </div>
+                <Image
+                  src={product.imageUrl}
+                  alt={product.nom}
+                  fill
+                  style={{ objectFit: 'cover' }}
+                  sizes="(max-width: 1024px) 100vw, 33vw"
+                  priority
+                  className="opacity-90 hover:opacity-100 transition-opacity duration-500"
+                />
               ) : (
-                <div className="w-full h-96 bg-zinc-200 flex items-center justify-center text-zinc-500">
-                  Pas d&apos;image disponible
+                <div className="flex flex-col items-center justify-center text-[#8EA397] font-mono text-sm tracking-widest uppercase">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mb-3 opacity-50">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  Image non disponible
                 </div>
               )}
             </div>
 
-            {/* BOUTON VOIR PRODUCTEUR - Dirige vers la page du producteur avec le contexte géographique */}
+            {/* Fiche Producteur */}
+            <div className="glass-panel p-6 rounded-xl relative">
+              <h3 className="text-xs font-mono tracking-widest uppercase text-[#8EA397] mb-2">
+                Origine & Création
+              </h3>
+              <p className="text-lg font-semibold text-[#E8E3D9] mb-4">
+                {product.producteur.nom}
+              </p>
+              
               <Link
                 href={`/zones/${encodeURIComponent(continentDecoded)}/${encodeURIComponent(paysDecoded)}/producteurs/${product.producteur.id}`} 
-                className="block w-full py-3 px-4 bg-zinc-900 text-white text-center font-medium rounded-lg hover:bg-zinc-800 transition-colors"
+                className="btn-glass w-full py-3 px-4 rounded-lg justify-center font-medium"
               >
-                Voir le producteur
+                Découvrir le producteur
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="ml-2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
               </Link>
+            </div>
           </div>
 
-          {/* COLONNE CENTRE - INFORMATIONS PRODUIT */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg p-6 shadow-md h-full flex flex-col">
-              <h1 className="text-3xl font-bold mb-4 text-zinc-950">
-                {product.nom}
-              </h1>
-
-              <div className="mb-4">
-                <span className="inline-block bg-zinc-200 text-zinc-700 px-3 py-1 rounded-full text-sm font-medium">
+          {/* COLONNE CENTRE (Infos Produit) - 5 colonnes */}
+          <div className="lg:col-span-5 flex flex-col glass-panel p-8 rounded-xl animate-hud" style={{ animationDelay: '0.2s' }}>
+            <div className="flex-1">
+              {/* Type / Tag */}
+              <div className="mb-4 inline-flex items-center gap-2 border border-[#A3FF90]/30 bg-[#A3FF90]/5 px-3 py-1 rounded-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#A3FF90] shadow-[0_0_8px_#A3FF90]"></span>
+                <span className="text-xs font-mono uppercase tracking-widest text-neon-vert">
                   {product.type}
                 </span>
               </div>
 
-              <div className="mb-6 flex-1">
-                <p className="text-zinc-700 leading-relaxed text-base">
-                  {product.description || "Aucune description n'a été fournie pour ce produit."}
+              {/* Titre */}
+              <h1 className="text-4xl lg:text-5xl font-bold mb-8 text-[#E8E3D9] leading-tight">
+                {product.nom}
+              </h1>
+
+              <hr className="neon-separator-vert mb-8" />
+
+              {/* Description */}
+              <div className="mb-8">
+                <h3 className="text-xs font-mono tracking-widest uppercase text-[#8EA397] mb-3">
+                  Description du produit
+                </h3>
+                <p className="text-[#E8E3D9]/80 leading-relaxed text-base font-light">
+                  {product.description || "Aucune archive textuelle n'a été rattachée à cette référence."}
                 </p>
               </div>
+            </div>
 
-              <div className="border-t border-zinc-200 pt-4 mb-6">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-zinc-600 text-sm">Prix :</span>
-                  <span className="text-4xl font-bold text-orange-600">
-                    {product.prix.toFixed(2)} €
-                  </span>
+            {/* Zone d'action (Prix + Achat) */}
+            <div className="mt-auto pt-8 border-t border-[#1B3126]">
+              <div className="flex flex-col sm:flex-row items-center gap-6 justify-between mb-6">
+                <div>
+                  <p className="text-xs font-mono tracking-widest uppercase text-[#8EA397] mb-1">Valeur estimée</p>
+                  <p className="text-4xl font-bold text-neon-cuivre">
+                    {product.prix.toFixed(2)} <span className="text-2xl">€</span>
+                  </p>
                 </div>
               </div>
 
-              {/* NOUVEAU BOUTON : Aller sur la boutique */}
               <a 
                 href={product.lienBoutique || "https://lebarapapa.com/boutique"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full py-3 px-4 bg-orange-600 text-white text-center font-bold text-lg rounded-lg shadow-sm hover:bg-orange-700 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex justify-center items-center gap-2"
+                className="btn-glass w-full py-4 px-6 rounded-xl flex justify-center items-center gap-3 text-lg font-bold tracking-wide uppercase font-mono"
               >
-                <span>Acheter ce produit</span>
-                {/* Petite icône de lien externe */}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                Acquérir le produit
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                   <polyline points="15 3 21 3 21 9" />
                   <line x1="10" y1="14" x2="21" y2="3" />
                 </svg>
               </a>
-
-              <div className="mt-6 p-4 bg-zinc-50 rounded-lg border border-zinc-200">
-                <p className="text-xs text-zinc-600 uppercase tracking-wide mb-2">Producteur</p>
-                <p className="font-semibold text-zinc-900">{product.producteur.nom}</p>
-              </div>
             </div>
           </div>
 
-          {/* COLONNE DROITE - PRODUITS SIMILAIRES */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg p-6 shadow-md">
-              <h2 className="text-2xl font-bold mb-6 text-zinc-950">
-                Produits similaires
-              </h2>
+          {/* COLONNE DROITE (Produits Similaires) - 3 colonnes */}
+          <div className="lg:col-span-3 animate-hud" style={{ animationDelay: '0.3s' }}>
+            <div className="glass-panel p-6 rounded-xl h-full flex flex-col">
+              <div className="flex items-center gap-3 mb-6">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97736" strokeWidth="2" className="hud-icon-cuivre">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                <h2 className="text-sm font-mono tracking-widest uppercase text-[#E8E3D9]">
+                  Produits similaires
+                </h2>
+              </div> 
 
               {similarProducts.length === 0 ? (
-                <p className="text-zinc-500 text-sm">Aucun produit similaire trouvé.</p>
+                <p className="text-[#8EA397] text-sm italic font-light">Aucun produit connecté trouvé.</p>
               ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-4 flex-1 overflow-y-auto pr-2">
                   {similarProducts.map((simProduct) => (
                     <Link 
                       key={simProduct.id}
                       href={`/zones/${encodeURIComponent(continentDecoded)}/${encodeURIComponent(paysDecoded)}/produits/${simProduct.id}`}
-                      className="block border border-zinc-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      className="product-card-glass block rounded-lg p-3 group relative overflow-hidden"
                     >
-                      <div className="relative w-full h-32 mb-3 rounded-md overflow-hidden bg-zinc-100">
-                        {simProduct.imageUrl ? (
-                          <Image
-                            src={simProduct.imageUrl}
-                            alt={simProduct.nom}
-                            fill
-                            style={{ objectFit: 'cover' }}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-zinc-400">Sans image</div>
-                        )}
-                      </div>
+                      <div className="flex gap-4 items-center">
+                        {/* Miniature */}
+                        <div className="relative w-16 h-16 rounded-md overflow-hidden bg-[#0B0E0C] border border-[#1B3126] flex-shrink-0">
+                          {simProduct.imageUrl ? (
+                            <Image
+                              src={simProduct.imageUrl}
+                              alt={simProduct.nom}
+                              fill
+                              style={{ objectFit: 'cover' }}
+                              className="group-hover:scale-110 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] text-[#8EA397]">N/A</div>
+                          )}
+                        </div>
 
-                      <h3 className="font-semibold text-zinc-900 text-sm mb-2 line-clamp-2">
-                        {simProduct.nom}
-                      </h3>
-                      <p className="text-xs text-zinc-600 mb-2">
-                        {simProduct.type}
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-zinc-600 truncate max-w-[60%]">
-                          {simProduct.producteur.nom}
-                        </span>
-                        <span className="font-bold text-orange-600">
-                          {simProduct.prix.toFixed(2)} €
-                        </span>
+                        {/* Infos réduites */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-[#E8E3D9] text-sm truncate mb-1 group-hover:text-neon-vert transition-colors">
+                            {simProduct.nom}
+                          </h3>
+                          <div className="flex items-end justify-between">
+                            <span className="text-[10px] font-mono text-[#8EA397] uppercase tracking-wider truncate max-w-[60%]">
+                              {simProduct.producteur.nom}
+                            </span>
+                            <span className="text-xs font-bold text-[#D97736]">
+                              {simProduct.prix.toFixed(2)} €
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </Link>
                   ))}

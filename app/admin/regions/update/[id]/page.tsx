@@ -18,7 +18,7 @@ export default function UpdateRegion({ params }: { params: Promise<{ id: string 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        fetch('/api/zones/pays')
+        fetch('/api/admin/pays')
             .then(r => r.ok ? r.json() : [])
             .then(setPaysList)
             .catch(console.error);

@@ -34,6 +34,12 @@ type DashboardItem = {
     // Utilisé quand l'élément est un Producteur
     region?: {
         nom: string;
+        pays?: {
+            nom: string;
+            continent?: {
+                nom: string;
+            }
+        }
     };
     // Utilisé quand l'élément est une Région
     pays?: {
@@ -55,6 +61,9 @@ function DashboardContent() {
 
     const [productToDelete, setProductToDelete] = useState<DashboardItem | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const [producerToDelete, setProducerToDelete] = useState<DashboardItem | null>(null);
+    const [isProducerDeleting, setIsProducerDeleting] = useState(false);
 
     useEffect(() => {
         const currentTab = searchParams.get('tab') as TabType;
@@ -144,6 +153,27 @@ function DashboardContent() {
         }
     };
 
+    const handleProducerDeleteConfirm = async () => {
+        if(!producerToDelete) return;
+        setIsProducerDeleting(true);
+        try{
+            const res = await fetch(`/api/admin/producteurs/${producerToDelete.id}`, { method: 'DELETE' });
+            if(res.ok){
+                setData(prevData => prevData.filter(item => item.id !== producerToDelete.id));
+                setCounts(prev => ({ ...prev, producteurs: prev.producteurs - 1}));
+                toast.success(`Le producteur "${producerToDelete.nom}" a été supprimé.`);
+            } else{
+                toast.error("Échec de la suppression.");
+            }
+        } catch(err){
+            console.log(err);
+            toast.error("Erreur serveur lors de la suppression.");
+        } finally {
+            setIsProducerDeleting(false);
+            setProducerToDelete(null);
+        }
+    };
+
     const getPublicLink = (item: DashboardItem) => {
         const continent = item.producteur?.region?.pays?.continent?.nom 
             ? encodeURIComponent(item.producteur.region.pays.continent.nom) 
@@ -155,6 +185,18 @@ function DashboardContent() {
     
         return `/zones/${continent}/${pays}/produits/${item.id}`;
     };
+
+    const getPublicProducerLink = (item: DashboardItem) => {
+        const continent = item.region?.pays?.continent?.nom
+            ? encodeURIComponent(item.region.pays.continent.nom)
+            : 'Inconnu';
+        
+        const pays = item.region?.pays?.nom 
+            ? encodeURIComponent(item.region.pays.nom) 
+            : 'Inconnu'; 
+        
+        return `/zones/${continent}/${pays}/producteurs/${item.id}`;    
+    }
 
     const renderContent = () => {
         switch (activeTab) {
@@ -265,7 +307,17 @@ function DashboardContent() {
                                         <td className="border border-zinc-950 p-2">{item.region?.nom || 'N/A'}</td>
                                         <td className="border border-zinc-950 p-2 truncate max-w-xs">{item.description}</td>
                                         <td className="border border-zinc-950 p-2">
-                                            <Link href={`/admin/producteurs/update/${item.id}`} className="text-xs underline font-bold">Modifier</Link>
+                                            <div className="flex items-center justify-center gap-3">
+                                                <Link href={getPublicProducerLink(item)} target="_blank" title="Voir sur le site public" className="p-1 hover:bg-zinc-300 border border-transparent hover:border-zinc-950 rounded transition-all">
+                                                    <Eye size={18} />
+                                                </Link>
+                                                <Link href={`/admin/producteurs/update/${item.id}`} title="Modifier" className="p-1 hover:bg-blue-100 text-blue-700 border border-transparent hover:border-blue-700 rounded transition-all">
+                                                    <Edit size={18} />
+                                                </Link>
+                                                <button onClick={() => setProducerToDelete(item)} title="Supprimer" className="p-1 hover:bg-red-100 text-red-600 border border-transparent hover:border-red-600 rounded transition-all">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -468,6 +520,36 @@ function DashboardContent() {
                     </div>
                 </div>
             </Modal>
+
+            <Modal
+                isOpen={!!producerToDelete}
+                onClose={() => !isProducerDeleting && setProducerToDelete(null)}
+                title='Confirmer la suppression'
+            >
+                <div className="mt-4">
+                    <p className="text-base mb-6">
+                        Es-tu sûr de vouloir supprimer définitivement le producteur <span className="font-bold underline">{producerToDelete?.nom}</span> ?<br/>
+                        <span className="text-red-600 text-sm font-bold">Cette action est irréversible.</span>
+                    </p>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => setProducerToDelete(null)}
+                            disabled={isProducerDeleting}
+                            className="flex-1 py-3 border border-zinc-950 hover:bg-zinc-200 font-bold uppercase text-xs transition-colors disabled:opacity-50"
+                        >
+                            Annuler
+                        </button>
+                        <button
+                            onClick={handleProducerDeleteConfirm}
+                            disabled={isProducerDeleting}
+                            className="flex-1 py-3 border border-zinc-950 bg-red-600 text-zinc-50 font-bold uppercase text-xs hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {isProducerDeleting ? "Suppression..." : <><Trash2 size={16} /> Supprimer</>}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
         </div>
     );
 }

@@ -97,7 +97,7 @@ export default function UpdateProducteur({ params }: { params: Promise<{ id: str
                             <label className={`${labelClass} w-full`}>Logo ou photo</label>
                             <div className="w-28 h-28 relative rounded-xl border border-[#1B3126] bg-[#0A120E]/60 overflow-hidden flex items-center justify-center">
                                 {(previewUrl || currentImage)
-                                    ? <Image src={previewUrl || currentImage || ''} alt="Aperçu" fill className="object-cover" />
+                                    ? <Image src={previewUrl || currentImage || ''} alt="Aperçu" fill sizes="112px" className="object-cover" />
                                     : <span className="text-[10px] font-mono text-[#8EA397]/50 text-center px-2">Aucun logo</span>
                                 }
                             </div>

@@ -195,6 +195,7 @@ export default async function ProductPage({
                               alt={simProduct.nom}
                               fill
                               style={{ objectFit: 'cover' }}
+                              sizes="64px"
                               className="group-hover:scale-110 transition-transform duration-500"
                             />
                           ) : (

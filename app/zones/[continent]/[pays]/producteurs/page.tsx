@@ -104,11 +104,12 @@ export default async function ProducteursPage({
                                         
                                         <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#1B3126] group-hover:border-[#A3FF90]/50 transition-colors duration-300 relative bg-[#0A120E] flex items-center justify-center shadow-[inset_0_0_15px_rgba(0,0,0,0.8)] flex-shrink-0">
                                             {producteur.logoUrl ? (
-                                                <Image 
+                                                <Image
                                                     src={producteur.logoUrl}
-                                                    alt={`Logo ${producteur.nom}`} 
+                                                    alt={`Logo ${producteur.nom}`}
                                                     fill
-                                                    className="object-contain p-2" 
+                                                    sizes="96px"
+                                                    className="object-contain p-2"
                                                 />
                                             ) : (
                                                 <span className="text-xs text-[#8EA397] font-mono">NO LOGO</span>
